@@ -127,4 +127,5 @@ func main() {
 	printWaitingQueue(c, reqType)
 	printRequestStateTable(c, reqType)
 	printRequestTable(c, reqType)
+	setupService()
 }
