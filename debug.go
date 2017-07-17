@@ -1,87 +1,106 @@
 package main
 
 import (
-	"github.com/garyburd/redigo/redis"
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
-func printValues(values []interface{}) {
-	for _, v := range values {
-		g_log.Debug.Printf("%s\n", v)
+func printResponse(r *redis.Resp) {
+	g_log.Debug.Println(r.IsType(redis.Array))
+	values, err := r.Map()
+	if nil != err {
+		g_log.Info.Println("Decode redis response fail ", err)
+		return
+	}
+
+	for k, v := range values {
+		g_log.Debug.Println(k, v)
 	}
 }
 
-func printRequestStateTable(c redis.Conn, reqType string) {
+func printRequestStateTable(reqType string) {
 	field := getReqStateTableName(reqType)
-	values, err := redis.Values(c.Do("HGETALL", field))
-	if nil != err {
-		g_log.Info.Println("Get requst state table fail, ", field, err)
+	resp := g_redisPool.Cmd("HGETALL", field)
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst state table fail, ", field, resp.Err)
 		return
 	} else {
 		g_log.Debug.Println("State table:")
-		printValues(values)
+		printResponse(resp)
 	}
 }
 
-func printRequestTable(c redis.Conn, reqType string) {
+func printRequestTable(reqType string) {
 	field := getReqTableName(reqType)
-	values, err := redis.Values(c.Do("HGETALL", field))
-	if nil != err {
-		g_log.Info.Println("Get requst table fail, ", field, err)
+	resp := g_redisPool.Cmd("HGETALL", field)
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst table fail, ", field, resp.Err)
 		return
 	} else {
 		g_log.Debug.Println("Request table:")
-		printValues(values)
+		printResponse(resp)
 	}
 }
 
-func printWaitingQueue(c redis.Conn, reqType string) {
+func printWaitingQueue(reqType string) {
 
 	field := getReqWaitingQueueName(reqType)
-	values, err := redis.Values(c.Do("ZRANGE", field, "0", "-1", "WITHSCORES"))
-	if nil != err {
-		g_log.Info.Println("Get requst waiting queue fail, ", field, err)
+	resp := g_redisPool.Cmd("ZRANGE", field, "0", "-1", "WITHSCORES")
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst waiting queue fail, ", field, resp.Err)
 		return
 	} else {
 		g_log.Debug.Println("Waiting queue:")
-		printValues(values)
+		printResponse(resp)
 	}
 }
 
-func cleanRequestTable(c redis.Conn, reqType string) {
+func cleanRequestTable(reqType string) {
 	field := getReqTableName(reqType)
-	cleanHTable(c, field)
+	g_log.Debug.Println(">>>>>>>>>> Clean Request Table:")
+	cleanHTable(field)
 }
 
-func cleanRequestStateTable(c redis.Conn, reqType string) {
+func cleanRequestStateTable(reqType string) {
 	field := getReqStateTableName(reqType)
-	cleanHTable(c, field)
+	g_log.Debug.Println(">>>>>>>>>> Clean Request State Table:")
+	cleanHTable(field)
 }
 
-func cleanHTable(c redis.Conn, field string) {
-	_, err := c.Do("HGETALL", field)
-	if nil != err {
-		g_log.Info.Printf("Clean %s fail, %s\n", field, err.Error())
+func cleanHTable(field string) {
+	resp := g_redisPool.Cmd("HGETALL", field)
+	if resp.Err != nil {
+		g_log.Info.Printf("Clean %s fail, %s\n", field, resp.Err.Error())
 		return
 	}
 
-	values, err := redis.Values(c.Do("HGETALL", field))
-	if nil != err {
-		g_log.Info.Println("Get requst table fail, ", field, err)
+	resp = g_redisPool.Cmd("HGETALL", field)
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst table fail, ", field, resp.Err)
 		return
 	} else {
+		if false == resp.IsType(redis.Array) {
+			g_log.Info.Println("Decode fail", field)
+			return
+		}
+
+		values, err := resp.Map()
+		if nil != err {
+			g_log.Info.Println("Decode Htable response fail", field)
+			return
+		}
 		for k, v := range values {
-			if k%2 == 0 {
-				c.Do("HDEL", field, v)
-			}
+			g_redisPool.Cmd("HDEL", field, k)
+			g_log.Debug.Println("Removing ", k, v)
 		}
 	}
 }
 
-func cleanRequestWaitingQueue(c redis.Conn, reqType string) {
+func cleanRequestWaitingQueue(reqType string) {
 	wq := getReqWaitingQueueName(reqType)
-	_, err := c.Do("ZREMRANGEBYRANK", wq, "0", "-1")
-	if nil != err {
-		g_log.Info.Printf("Clean %s fail, %s\n", wq, err.Error())
+	g_log.Debug.Println(">>>>>>>>>> Clean Request Waiting Queue:")
+	resp := g_redisPool.Cmd("ZREMRANGEBYRANK", wq, "0", "-1")
+	if nil != resp.Err {
+		g_log.Info.Printf("Clean %s fail, %s\n", wq, resp.Err.Error())
 		return
 	}
 }

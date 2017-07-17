@@ -1,6 +1,6 @@
 #!/bin/sh
 
 curl http://127.0.0.1:1234/request?type=100
-curl -X POST -d "{\"test\": \"that\"}" http://127.0.0.1:1234/request?type=200
-curl -X PUT -d "{\"test\": \"that\"}" http://127.0.0.1:1234/request?type=300
-curl -X DELETE -d "{\"test\": \"that\"}" http://127.0.0.1:1234/request?type=400
+curl -X POST -d "{\"test\": \"a new request\"}" http://127.0.0.1:1234/request?type=100
+curl -X PUT -H 'Content-Type: application/json' -d "{\"WorkerId\": \"worker001\", \"RequestId\": \"11121212\", \"State\":2}" http://127.0.0.1:1234/request?type=100
+curl -X DELETE -d "{\"reqid\": \"11121212\"}" http://127.0.0.1:1234/request?type=100

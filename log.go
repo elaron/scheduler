@@ -41,7 +41,7 @@ func InitLogger(l *Log, prefix string) error {
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	l.Debug = log.New(debugHandler,
-		"INFO: ",
+		"DEBUG: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	return nil
