@@ -5,9 +5,20 @@ import (
 )
 
 func printValues(values []interface{}) {
-	g_log.Debug.Println("list:")
 	for _, v := range values {
 		g_log.Debug.Printf("%s\n", v)
+	}
+}
+
+func printRequestStateTable(c redis.Conn, reqType string) {
+	field := getReqStateTableName(reqType)
+	values, err := redis.Values(c.Do("HGETALL", field))
+	if nil != err {
+		g_log.Info.Println("Get requst state table fail, ", field, err)
+		return
+	} else {
+		g_log.Debug.Println("State table:")
+		printValues(values)
 	}
 }
 
@@ -18,6 +29,7 @@ func printRequestTable(c redis.Conn, reqType string) {
 		g_log.Info.Println("Get requst table fail, ", field, err)
 		return
 	} else {
+		g_log.Debug.Println("Request table:")
 		printValues(values)
 	}
 }
@@ -30,12 +42,22 @@ func printWaitingQueue(c redis.Conn, reqType string) {
 		g_log.Info.Println("Get requst waiting queue fail, ", field, err)
 		return
 	} else {
+		g_log.Debug.Println("Waiting queue:")
 		printValues(values)
 	}
 }
 
 func cleanRequestTable(c redis.Conn, reqType string) {
 	field := getReqTableName(reqType)
+	cleanHTable(c, field)
+}
+
+func cleanRequestStateTable(c redis.Conn, reqType string) {
+	field := getReqStateTableName(reqType)
+	cleanHTable(c, field)
+}
+
+func cleanHTable(c redis.Conn, field string) {
 	_, err := c.Do("HGETALL", field)
 	if nil != err {
 		g_log.Info.Printf("Clean %s fail, %s\n", field, err.Error())
