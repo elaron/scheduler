@@ -10,69 +10,75 @@ import (
 
 var g_log Log
 
+func getReqTableName(reqType string) string {
+	return fmt.Sprintf("request_%s", reqType)
+}
+
+func getReqWaitingQueueName(reqType string) string {
+	return fmt.Sprintf("waiting_queue_%s", reqType)
+}
+
 func addRequestToTable(c redis.Conn, reqType string, reqId string, reqBody string) {
-	field := fmt.Sprintf("request_%s", reqType)
+
+	field := getReqTableName(reqType)
+
 	_, err := c.Do("HSET", field, reqId, reqBody)
 	if nil != err {
-
+		g_log.Info.Println("Add request to table fail, ", reqType, reqId, reqBody, err.Error())
+		return
 	}
 }
 
-func addRequest(c redis.Conn, request string) {
+func addReqToWatingQueue(c redis.Conn, reqType string, reqId string) {
 
 	ts := time.Now().UnixNano()
-	id := uuid.NewV4()
-	fmt.Println(ts, id)
+	field := getReqWaitingQueueName(reqType)
 
-	v, err := c.Do("ZADD", "request", ts, id)
+	_, err := c.Do("ZADD", field, ts, reqId)
 	if nil != err {
-		g_log.Info.Println("ZADD request fail", err)
+		g_log.Info.Println("Add request to waiting queue fail, ", reqType, reqId, err)
 		return
-	}
-
-	fmt.Println(v)
-	values, err := redis.Values(c.Do("ZRANGE", "request", "0", "-1", "WITHSCORES"))
-	if nil != err {
-		g_log.Info.Println("Get requst list fail, ", err)
-		return
-	} else {
-		fmt.Println("Request list:")
-		for k, req := range values {
-			if k%2 == 0 {
-				fmt.Printf("id: %d %s ", k, req)
-			} else {
-				fmt.Printf("score: %s\n", req)
-			}
-		}
 	}
 }
 
-func cleanRequestList(c redis.Conn, name string) {
-	_, err := c.Do("ZREMRANGEBYRANK", name, "0", "-1")
+func addRequest(c redis.Conn, reqType string, request string) {
+
+	id := fmt.Sprintf("%s", uuid.NewV4())
+	//start a transaction
+	_, err := c.Do("MULTI")
 	if nil != err {
-		fmt.Printf("Clean %s fail, %s\n", name, err.Error())
-		return
+		g_log.Info.Println(err)
 	}
+	defer c.Do("EXEC")
+
+	addRequestToTable(c, reqType, id, request)
+	addReqToWatingQueue(c, reqType, id)
 }
 
 func main() {
-
+	reqType := "100"
 	err := InitLogger(&g_log, "scheduler")
 	if nil != err {
 		log.Println(err.Error())
 		return
 	}
-	defer g_log.Info.Println("Scheduler stop!!")
 
 	c, err := redis.Dial("tcp", "localhost:6379")
 	if nil != err {
 		g_log.Info.Println("Connect to redis fail, ", err)
 		return
 	}
-	defer c.Close()
-	cleanRequestList(c, "request")
+
+	defer func() {
+		g_log.Info.Println("Scheduler stop!!")
+		cleanRequestWaitingQueue(c, reqType)
+		cleanRequestTable(c, reqType)
+		c.Close()
+	}()
 
 	for i := 0; i < 5; i++ {
-		addRequest(c, "Elar")
+		addRequest(c, "100", "Elar")
 	}
+	printWaitingQueue(c, "100")
+	printRequestTable(c, "100")
 }
