@@ -4,8 +4,19 @@ import (
 	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/satori/go.uuid"
+	"log"
 	"time"
 )
+
+var g_log Log
+
+func addRequestToTable(c redis.Conn, reqType string, reqId string, reqBody string) {
+	field := fmt.Sprintf("request_%s", reqType)
+	_, err := c.Do("HSET", field, reqId, reqBody)
+	if nil != err {
+
+	}
+}
 
 func addRequest(c redis.Conn, request string) {
 
@@ -15,14 +26,14 @@ func addRequest(c redis.Conn, request string) {
 
 	v, err := c.Do("ZADD", "request", ts, id)
 	if nil != err {
-		fmt.Println("ZADD request fail", err)
+		g_log.Info.Println("ZADD request fail", err)
 		return
 	}
 
 	fmt.Println(v)
 	values, err := redis.Values(c.Do("ZRANGE", "request", "0", "-1", "WITHSCORES"))
 	if nil != err {
-		fmt.Println("Get requst list fail, ", err)
+		g_log.Info.Println("Get requst list fail, ", err)
 		return
 	} else {
 		fmt.Println("Request list:")
@@ -46,9 +57,16 @@ func cleanRequestList(c redis.Conn, name string) {
 
 func main() {
 
+	err := InitLogger(&g_log, "scheduler")
+	if nil != err {
+		log.Println(err.Error())
+		return
+	}
+	defer g_log.Info.Println("Scheduler stop!!")
+
 	c, err := redis.Dial("tcp", "localhost:6379")
 	if nil != err {
-		fmt.Println("Connect to redis fail, ", err)
+		g_log.Info.Println("Connect to redis fail, ", err)
 		return
 	}
 	defer c.Close()
