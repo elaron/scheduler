@@ -88,7 +88,6 @@ func addReqToStateTable(c *redis.Client, t time.Time, reqType string, reqId stri
 func addRequest(reqType string, request string) {
 
 	id := fmt.Sprintf("%s", uuid.NewV4())
-	//start a transaction
 	c, err := g_redisPool.Get()
 	if nil != err {
 		g_log.Info.Println("Get connection from Redis Pool fail", err)

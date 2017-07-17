@@ -14,9 +14,9 @@ type ReqStateReport struct {
 }
 
 func getRequest(rw http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	fmt.Println("form:", req.Form)
-	fmt.Println("reqType:", req.FormValue("type"))
+	reqType := req.FormValue("type")
+	num := req.FormValue("num")
+	g_log.Debug.Println("Get request:", reqType, num, cid)
 }
 
 func updateRequest(rw http.ResponseWriter, req *http.Request) {
