@@ -109,7 +109,6 @@ func addRequest(reqType string, request string) {
 }
 
 func main() {
-	reqType := "100"
 	err := InitLogger(&g_log, "scheduler")
 	if nil != err {
 		log.Println(err.Error())
@@ -122,19 +121,10 @@ func main() {
 		return
 	}
 	g_redisPool = p
-	cleanRequestWaitingQueue(reqType)
-	cleanRequestStateTable(reqType)
-	cleanRequestTable(reqType)
 
 	defer func() {
 		g_log.Info.Println("Scheduler stop!!")
 	}()
 
-	for i := 0; i < 3; i++ {
-		addRequest(reqType, "Elar")
-	}
-	printWaitingQueue(reqType)
-	printRequestStateTable(reqType)
-	printRequestTable(reqType)
 	setupService()
 }

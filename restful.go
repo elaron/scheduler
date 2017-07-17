@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -34,22 +35,24 @@ func updateRequest(rw http.ResponseWriter, req *http.Request) {
 
 	str, err := json.Marshal(&state)
 	if nil != err {
+		g_log.Info.Println("Decode ReqStateReport fail", err)
 		return
 	}
-	g_log.Debug.Println(reqType, string(str))
+	g_log.Debug.Println("Update request:", reqType, string(str))
 }
 
 func createRequest(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
 
-	buff := make([]byte, req.ContentLength)
-	body, err := req.Body.Read(buff)
+	body, err := ioutil.ReadAll(req.Body)
 	if nil != err {
-		g_log.Info.Println("Decode put request body fail, ", err)
+		g_log.Info.Println("Decode post request body fail, ", err)
 		return
 	}
-	g_log.Debug.Println(reqType, body)
+	defer req.Body.Close()
+
+	g_log.Debug.Println("Create request:", reqType, string(body))
 }
 
 func deleteRequest(rw http.ResponseWriter, req *http.Request) {
@@ -74,8 +77,18 @@ func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 }
 
+func clean(rw http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	reqType := req.FormValue("type")
+
+	cleanRequestStateTable(reqType)
+	cleanRequestWaitingQueue(reqType)
+	cleanRequestTable(reqType)
+}
+
 func setupService() {
 	g_log.Info.Println("Listening Port 1234 ...")
 	http.HandleFunc("/request", requestOpDispatch)
+	http.HandleFunc("/clean", clean)
 	http.ListenAndServe(":1234", nil)
 }
