@@ -53,6 +53,7 @@ func createRequest(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	g_log.Debug.Println("Create request:", reqType, string(body))
+	addRequest(reqType, string(body))
 }
 
 func deleteRequest(rw http.ResponseWriter, req *http.Request) {
