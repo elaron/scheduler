@@ -5,16 +5,20 @@ import (
 )
 
 func Test_RegisterUser_1(t *testing.T) {
-	username := "aaa"
-	deleteUser(username)
+	var a Auth
+	a.Init("localhost", 6379, 10, "scheduler")
 
-	token1, err := registerUser(username)
+	username := "aaa"
+	accessList := []int{100, 101}
+	a.DeleteUser(username)
+
+	token1, err := a.RegisterUser(username, accessList)
 	if nil != err {
 		t.Error("CASE: [Register user] fail!")
 		return
 	}
 
-	token2, err := registerUser(username)
+	token2, err := a.RegisterUser(username, accessList)
 	if nil != err {
 		t.Error("CASE: [Register user] Fail! Cannot register repeately.")
 		return
