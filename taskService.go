@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func fetchTask(rw http.ResponseWriter, req *http.Request) {
@@ -54,17 +53,7 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	currState, err := getTaskState(reqType, stateReport.RequestId)
-	if nil != err {
-		g_log.Info.Println("Get task state fail, ", err)
-		return
-	}
-
-	currState.WorkerId = stateReport.WorkerId
-	currState.State = stateReport.State
-	currState.Timestamp[stateReport.State] = time.Now()
-
-	err = updateTaskState(nil, reqType, currState)
+	err = updateRequestState(reqType, stateReport.RequestId, stateReport.WorkerId, stateReport.State)
 	if nil != err {
 		rw.Write([]byte(err.Error()))
 	}

@@ -62,6 +62,22 @@ func getRequest(reqType string, num int) (reqNum int, reqs []RequestWithUuid) {
 	return
 }
 
+func updateRequestState(reqType string, reqId string, workerId string, reqState REQUEST_STATE_TYPE) error {
+
+	currState, err := getTaskState(reqType, reqId)
+	if nil != err {
+		g_log.Info.Println("Get task state fail, ", err)
+		return err
+	}
+
+	currState.WorkerId = workerId
+	currState.State = reqState
+	currState.Timestamp[reqState] = time.Now()
+
+	err = updateTaskState(nil, reqType, currState)
+	return err
+}
+
 func main() {
 	err := InitLogger(&g_log, "scheduler")
 	if nil != err {
