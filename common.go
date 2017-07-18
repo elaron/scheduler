@@ -31,3 +31,8 @@ type RequestArray struct {
 	Num         int
 	RequestList []RequestWithUuid
 }
+
+type RequestWithUuid struct {
+	Id   string
+	Body string
+}

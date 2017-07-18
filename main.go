@@ -90,11 +90,6 @@ func addRequest(reqType string, request string) {
 	addReqToStateTable(c, t, reqType, id)
 }
 
-type RequestWithUuid struct {
-	Id   string
-	Body string
-}
-
 func getRequest(reqType string, num int) (reqNum int, reqs []RequestWithUuid) {
 
 	field := getReqWaitingQueueName(reqType)
