@@ -70,6 +70,10 @@ func updateRequestState(reqType string, reqId string, workerId string, reqState 
 		return err
 	}
 
+	if REQUEST_IN_LINE == currState.State {
+		removeRequestFromWaitingQueue(reqType, reqId)
+	}
+
 	currState.WorkerId = workerId
 	currState.State = reqState
 	currState.Timestamp[reqState] = time.Now()

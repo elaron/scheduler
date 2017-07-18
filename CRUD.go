@@ -210,3 +210,8 @@ Fail:
 	g_log.Info.Println(msg)
 	return errors.New(msg)
 }
+
+func removeRequestFromWaitingQueue(reqType string, reqId string) {
+	field := getReqWaitingQueueName(reqType)
+	g_redisPool.Cmd("ZREM", field, reqId)
+}
