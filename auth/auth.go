@@ -1,13 +1,16 @@
 package auth
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/satori/go.uuid"
+	"math"
 	"scheduler/common"
 	"scheduler/log"
+	"time"
 )
 
 const (
@@ -123,4 +126,49 @@ func (a *Auth) getAccessList(username string) []int {
 func (a *Auth) DeleteUser(username string) {
 	field := comm.GetUserTable(username)
 	a.pool.Cmd("DEL", field)
+}
+
+func (a *Auth) CheckUserSignitural(username, timeStr, chksum string) (bool, error) {
+	token := a.getUserBaseToken(username)
+	if len(token) == 0 {
+		s := fmt.Sprintf("Get %s base token fail.", username)
+		a.log.Info.Println(s)
+		return false, errors.New(s)
+	}
+
+	if isTimeOk(timeStr, time.Now()) == false {
+		s := fmt.Sprintf("Illegal timestamp")
+		a.log.Info.Println(s, timeStr, time.Now())
+		return false, errors.New(s)
+	}
+	return identify(username, token, timeStr, chksum), nil
+}
+
+func isTimeOk(timeStr string, curr time.Time) bool {
+
+	t1, err := time.Parse("2006-01-02 03:04:05", timeStr)
+	if nil != err {
+		return false
+	}
+
+	deltaTime := math.Abs(float64(curr.Sub(t1).Seconds()))
+	fmt.Println("delta time:", t1, curr, deltaTime)
+	if deltaTime > 300 {
+		return false
+	}
+
+	return true
+}
+
+func identify(username, baseToken, timeStr, chksum string) bool {
+
+	str := fmt.Sprintf("%s%s%s", username, baseToken, timeStr)
+	checksum := sha256.Sum256([]byte(str))
+
+	sum := fmt.Sprintf("%x", checksum)
+	if sum != chksum {
+		return false
+	} else {
+		return true
+	}
 }
