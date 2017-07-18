@@ -7,17 +7,6 @@ import (
 	"strconv"
 )
 
-type ReqStateReport struct {
-	RequestId string
-	WorkerId  string
-	State     REQUEST_STATE_TYPE
-}
-
-type RequestArray struct {
-	Num         int
-	RequestList []RequestWithUuid
-}
-
 func fetchTask(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
