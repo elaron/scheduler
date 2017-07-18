@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type RequestState struct {
 	State     REQUEST_STATE_TYPE
 	Timestamp [REQUEST_STAT_TYPE_BUTT]time.Time
 }
+
 type ReqStateReport struct {
 	RequestId string
 	WorkerId  string
@@ -35,4 +37,16 @@ type RequestArray struct {
 type RequestWithUuid struct {
 	Id   string
 	Body string
+}
+
+func getReqTableName(reqType string) string {
+	return fmt.Sprintf("request_%s", reqType)
+}
+
+func getReqWaitingQueueName(reqType string) string {
+	return fmt.Sprintf("waiting_queue_%s", reqType)
+}
+
+func getReqStateTableName(reqType string) string {
+	return fmt.Sprintf("req_state_%s", reqType)
 }

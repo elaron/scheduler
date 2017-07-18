@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/mediocregopher/radix.v2/redis"
+	"time"
 )
 
 func printResponse(r *redis.Resp) {
@@ -122,4 +125,88 @@ func cleanRequestWaitingQueue(reqType string) {
 		g_log.Info.Printf("Clean %s fail, %s\n", wq, resp.Err.Error())
 		return
 	}
+}
+
+func addRequestToTable(c *redis.Client, reqType string, reqId string, reqBody string) {
+
+	field := getReqTableName(reqType)
+	resp := c.Cmd("HSET", field, reqId, reqBody)
+	if nil != resp.Err {
+		g_log.Info.Println("Add request to table fail, ", reqType, reqId, reqBody, resp.Err.Error())
+		return
+	}
+}
+
+func addReqToWatingQueue(c *redis.Client, t time.Time, reqType string, reqId string) {
+
+	ts := t.UnixNano()
+	field := getReqWaitingQueueName(reqType)
+	resp := c.Cmd("ZADD", field, ts, reqId)
+	if nil != resp.Err {
+		g_log.Info.Println("Add request to waiting queue fail, ", reqType, reqId, resp.Err)
+		return
+	}
+}
+
+func addReqToStateTable(c *redis.Client, t time.Time, reqType string, reqId string) {
+	state := RequestState{
+		RequestId: reqId,
+		State:     REQUEST_IN_LINE,
+	}
+	state.Timestamp[REQUEST_IN_LINE] = t
+	updateTaskState(c, reqType, state)
+}
+
+func getTaskState(reqType string, reqId string) (RequestState, error) {
+
+	field := getReqStateTableName(reqType)
+	resp := g_redisPool.Cmd("HGET", field, reqId)
+	if nil != resp.Err {
+		return RequestState{}, resp.Err
+	}
+
+	str, err := resp.Str()
+	if nil != err {
+		return RequestState{}, err
+	}
+
+	var state RequestState
+	err = json.Unmarshal([]byte(str), &state)
+	if nil != err {
+		return RequestState{}, err
+	}
+
+	return state, nil
+}
+
+func updateTaskState(c *redis.Client, reqType string, state RequestState) error {
+
+	if nil == c {
+		c, _ = g_redisPool.Get()
+		defer g_redisPool.Put(c)
+	}
+
+	var msg string
+	var err error
+	var resp *redis.Resp
+	var str []byte
+	reqId := state.RequestId
+	field := getReqStateTableName(reqType)
+
+	str, err = json.Marshal(state)
+	if nil != err {
+		msg = fmt.Sprintf("Marsh request state fail, %s %s", reqId, err.Error())
+		goto Fail
+	}
+
+	resp = c.Cmd("HSET", field, reqId, str)
+	if nil != resp.Err {
+		msg = fmt.Sprintf("Set request to state table fail, %s %s", reqId, resp.Err.Error())
+		goto Fail
+	}
+	return nil
+
+Fail:
+	g_log.Info.Println(msg)
+	return errors.New(msg)
 }

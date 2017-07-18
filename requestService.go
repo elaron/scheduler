@@ -13,11 +13,9 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	num, err := strconv.Atoi(req.FormValue("num"))
 	if nil != err {
 		g_log.Info.Println("Decode _num_ parameter fail, ", err)
-		return
+		num = 1
 	}
 	g_log.Debug.Println("Get request:", reqType, num)
-
-	printWaitingQueue(reqType)
 
 	reqNum, reqArr := getRequest(reqType, num)
 	response := RequestArray{Num: reqNum, RequestList: reqArr}
