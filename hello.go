@@ -7,6 +7,7 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/satori/go.uuid"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -105,6 +106,38 @@ func addRequest(reqType string, request string) {
 	addRequestToTable(c, reqType, id, request)
 	addReqToWatingQueue(c, t, reqType, id)
 	addReqToStateTable(c, t, reqType, id)
+}
+
+type RequestWithUuid struct {
+	Id   string
+	Body string
+}
+
+func getRequest(reqType string, num int) (reqNum int, reqs []RequestWithUuid) {
+
+	field := getReqWaitingQueueName(reqType)
+	numStr := strconv.Itoa(num)
+
+	resp := g_redisPool.Cmd("ZRANGE", field, "0", numStr)
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst waiting queue fail, ", field, resp.Err)
+		return
+
+	} else {
+		uuids, err := resp.List()
+		if nil != err {
+			g_log.Info.Println("Decode waiting request queue fail, ", err)
+			return
+		}
+
+		for _, id := range uuids {
+			reqJson := getSpecRequest(reqType, id)
+			reqTemp := RequestWithUuid{Id: id, Body: reqJson}
+			reqs = append(reqs, reqTemp)
+			reqNum += 1
+		}
+	}
+	return
 }
 
 func main() {

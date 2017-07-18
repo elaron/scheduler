@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
@@ -39,6 +40,24 @@ func printRequestTable(reqType string) {
 		g_log.Debug.Println("Request table:")
 		printResponse(resp)
 	}
+}
+
+func getSpecRequest(reqType string, reqId string) string {
+
+	field := getReqTableName(reqType)
+	resp := g_redisPool.Cmd("HGET", field, reqId)
+	if nil != resp.Err {
+		g_log.Info.Println("Get requst table fail, ", field, resp.Err)
+		return "Get spec request fail"
+	}
+
+	body, err := resp.Str()
+	if nil != err {
+		s := fmt.Sprintf("Get request body fail, %s\n", err.Error())
+		g_log.Info.Println(s)
+		return s
+	}
+	return body
 }
 
 func printWaitingQueue(reqType string) {

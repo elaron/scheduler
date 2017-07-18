@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type ReqStateReport struct {
@@ -13,10 +14,31 @@ type ReqStateReport struct {
 	State     REQUEST_STATE_TYPE
 }
 
-func getRequest(rw http.ResponseWriter, req *http.Request) {
+type RequestArray struct {
+	Num         int
+	RequestList []RequestWithUuid
+}
+
+func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
-	num := req.FormValue("num")
-	g_log.Debug.Println("Get request:", reqType, num, cid)
+	num, err := strconv.Atoi(req.FormValue("num"))
+	if nil != err {
+		g_log.Info.Println("Decode _num_ parameter fail, ", err)
+		return
+	}
+	g_log.Debug.Println("Get request:", reqType, num)
+
+	printWaitingQueue(reqType)
+
+	reqNum, reqArr := getRequest(reqType, num)
+	response := RequestArray{Num: reqNum, RequestList: reqArr}
+	b, err := json.Marshal(response)
+	if nil != err {
+		g_log.Info.Println("Encoding response fail", err)
+		return
+	}
+
+	rw.Write(b)
 }
 
 func updateRequest(rw http.ResponseWriter, req *http.Request) {
@@ -65,7 +87,7 @@ func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 	fmt.Println("Action:", req.Method)
 	switch req.Method {
 	case "GET":
-		getRequest(rw, req)
+		fetchRequest(rw, req)
 	case "POST":
 		createRequest(rw, req)
 	case "PUT":
