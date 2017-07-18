@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"scheduler/common"
 	"strconv"
 )
 
@@ -16,7 +17,7 @@ func fetchTask(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	reqNum, reqArr := getRequest(reqType, num)
-	response := RequestArray{Num: reqNum, RequestList: reqArr}
+	response := comm.RequestArray{Num: reqNum, RequestList: reqArr}
 	b, err := json.Marshal(response)
 	if nil != err {
 		g_log.Info.Println("Encoding response fail", err)
@@ -32,7 +33,7 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 
 	decoder := json.NewDecoder(req.Body)
-	var stateReport ReqStateReport
+	var stateReport comm.ReqStateReport
 	err := decoder.Decode(&stateReport)
 	if nil != err {
 		g_log.Info.Println("Decode request stateReport  fail, ", err)
@@ -48,7 +49,7 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 	}
 	g_log.Debug.Println("Update request:", reqType, string(str))
 
-	if stateReport.State >= REQUEST_STAT_TYPE_BUTT {
+	if stateReport.State >= comm.REQUEST_STAT_TYPE_BUTT {
 		g_log.Info.Println("Unknown State type", stateReport.State)
 		return
 	}

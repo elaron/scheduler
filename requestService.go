@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"scheduler/common"
 	"strconv"
 )
 
@@ -18,7 +19,7 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	g_log.Debug.Println("Get request:", reqType, num)
 
 	reqNum, reqArr := getRequest(reqType, num)
-	response := RequestArray{Num: reqNum, RequestList: reqArr}
+	response := comm.RequestArray{Num: reqNum, RequestList: reqArr}
 	b, err := json.Marshal(response)
 	if nil != err {
 		g_log.Info.Println("Encoding response fail", err)
@@ -72,9 +73,9 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
 
-	cleanRequestStateTable(reqType)
-	cleanRequestWaitingQueue(reqType)
-	cleanRequestTable(reqType)
+	g_db.CleanRequestStateTable(reqType)
+	g_db.CleanRequestWaitingQueue(reqType)
+	g_db.CleanRequestTable(reqType)
 }
 
 func setupRequestService() {

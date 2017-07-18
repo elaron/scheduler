@@ -2,100 +2,68 @@ package main
 
 import (
 	"fmt"
-	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/satori/go.uuid"
 	"log"
-	"strconv"
+	"scheduler/common"
+	"scheduler/db"
+	"scheduler/log"
 	"time"
 )
 
-var g_log Log
-var g_redisPool *pool.Pool
+var g_log logger.Log
+var g_db db.DB
 
 func addRequest(reqType string, request string) {
 
 	id := fmt.Sprintf("%s", uuid.NewV4())
-	c, err := g_redisPool.Get()
-	if nil != err {
-		g_log.Info.Println("Get connection from Redis Pool fail", err)
-		return
-	}
-	defer g_redisPool.Put(c)
-
-	resp := c.Cmd("MULTI")
-	if nil != resp.Err {
-		g_log.Info.Println(resp.Err)
-		return
-	}
-	defer c.Cmd("EXEC")
-
 	t := time.Now()
-	addRequestToTable(c, reqType, id, request)
-	addReqToWatingQueue(c, t, reqType, id)
-	addReqToStateTable(c, t, reqType, id)
+
+	g_db.CreateNewRequest(id, t, reqType, request)
 }
 
-func getRequest(reqType string, num int) (reqNum int, reqs []RequestWithUuid) {
+func getRequest(reqType string, num int) (reqNum int, reqs []comm.RequestWithUuid) {
 
-	field := getReqWaitingQueueName(reqType)
-	numStr := strconv.Itoa(num - 1)
-
-	resp := g_redisPool.Cmd("ZRANGE", field, "0", numStr)
-	if nil != resp.Err {
-		g_log.Info.Println("Get requst waiting queue fail, ", field, resp.Err)
+	uuids := g_db.GetRequestInWaitingQueue(reqType, num)
+	if len(uuids) == 0 {
 		return
+	}
 
-	} else {
-		uuids, err := resp.List()
-		if nil != err {
-			g_log.Info.Println("Decode waiting request queue fail, ", err)
-			return
-		}
-
-		for _, id := range uuids {
-			reqJson := getSpecRequest(reqType, id)
-			reqTemp := RequestWithUuid{Id: id, Body: reqJson}
-			reqs = append(reqs, reqTemp)
-			reqNum += 1
-		}
+	for _, id := range uuids {
+		reqJson := g_db.GetSpecRequest(reqType, id)
+		reqTemp := comm.RequestWithUuid{Id: id, Body: reqJson}
+		reqs = append(reqs, reqTemp)
+		reqNum += 1
 	}
 	return
 }
 
-func updateRequestState(reqType string, reqId string, workerId string, reqState REQUEST_STATE_TYPE) error {
+func updateRequestState(reqType string, reqId string, workerId string, reqState comm.REQUEST_STATE_TYPE) error {
 
-	currState, err := getTaskState(reqType, reqId)
+	currState, err := g_db.GetTaskState(reqType, reqId)
 	if nil != err {
 		g_log.Info.Println("Get task state fail, ", err)
 		return err
 	}
 
-	if REQUEST_IN_LINE == currState.State {
-		removeRequestFromWaitingQueue(reqType, reqId)
+	if comm.REQUEST_IN_LINE == currState.State {
+		g_db.RemoveRequestFromWaitingQueue(reqType, reqId)
 	}
 
 	currState.WorkerId = workerId
 	currState.State = reqState
 	currState.Timestamp[reqState] = time.Now()
 
-	err = updateTaskState(nil, reqType, currState)
+	err = g_db.UpdateTaskState(nil, reqType, currState)
 	return err
 }
 
 func main() {
-	err := InitLogger(&g_log, "scheduler")
+	err := g_log.InitLogger("scheduler")
 	if nil != err {
 		log.Println(err.Error())
 		return
 	}
-
-	p, err := pool.New("tcp", "localhost:6379", 10)
-	if nil != err {
-		g_log.Info.Println("Connect to redis fail, ", err)
-		return
-	}
-	g_redisPool = p
-
+	g_db.InitDb("localhost", 6379, 10, "scheduler")
 	defer func() {
 		g_log.Info.Println("Scheduler stop!!")
 	}()
