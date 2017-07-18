@@ -116,7 +116,7 @@ type RequestWithUuid struct {
 func getRequest(reqType string, num int) (reqNum int, reqs []RequestWithUuid) {
 
 	field := getReqWaitingQueueName(reqType)
-	numStr := strconv.Itoa(num)
+	numStr := strconv.Itoa(num - 1)
 
 	resp := g_redisPool.Cmd("ZRANGE", field, "0", numStr)
 	if nil != resp.Err {
@@ -158,5 +158,10 @@ func main() {
 		g_log.Info.Println("Scheduler stop!!")
 	}()
 
-	setupService()
+	go setupRequestService()
+	go setupWorkerService()
+
+	for {
+		time.Sleep(600 * time.Second)
+	}
 }

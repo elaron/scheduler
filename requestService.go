@@ -8,17 +8,6 @@ import (
 	"strconv"
 )
 
-type ReqStateReport struct {
-	RequestId string
-	WorkerId  string
-	State     REQUEST_STATE_TYPE
-}
-
-type RequestArray struct {
-	Num         int
-	RequestList []RequestWithUuid
-}
-
 func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
@@ -41,28 +30,6 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	rw.Write(b)
 }
 
-func updateRequest(rw http.ResponseWriter, req *http.Request) {
-
-	req.ParseForm()
-	reqType := req.FormValue("type")
-
-	decoder := json.NewDecoder(req.Body)
-	var state ReqStateReport
-	err := decoder.Decode(&state)
-	if nil != err {
-		g_log.Info.Println("Decode request state report fail, ", err)
-		return
-	}
-	defer req.Body.Close()
-
-	str, err := json.Marshal(&state)
-	if nil != err {
-		g_log.Info.Println("Decode ReqStateReport fail", err)
-		return
-	}
-	g_log.Debug.Println("Update request:", reqType, string(str))
-}
-
 func createRequest(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
@@ -78,22 +45,25 @@ func createRequest(rw http.ResponseWriter, req *http.Request) {
 	addRequest(reqType, string(body))
 }
 
-func deleteRequest(rw http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	fmt.Println("form:", req.Form)
-}
-
 func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 	fmt.Println("Action:", req.Method)
 	switch req.Method {
 	case "GET":
 		fetchRequest(rw, req)
+
 	case "POST":
 		createRequest(rw, req)
+
 	case "PUT":
-		updateRequest(rw, req)
+		s := "It's illegal to update request!"
+		g_log.Info.Println(s)
+		rw.Write([]byte(s))
+
 	case "DELETE":
-		deleteRequest(rw, req)
+		s := "It's illegal to update request!"
+		g_log.Info.Println(s)
+		rw.Write([]byte(s))
+
 	default:
 		g_log.Info.Println("Unknown request Method: ", req.Method)
 	}
@@ -109,8 +79,8 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 	cleanRequestTable(reqType)
 }
 
-func setupService() {
-	g_log.Info.Println("Listening Port 1234 ...")
+func setupRequestService() {
+	g_log.Info.Println("Listening Port 1234 for request...")
 	http.HandleFunc("/request", requestOpDispatch)
 	http.HandleFunc("/clean", clean)
 	http.ListenAndServe(":1234", nil)
