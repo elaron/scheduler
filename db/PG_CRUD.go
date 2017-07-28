@@ -61,7 +61,7 @@ func (p *Pgdb) CreateNewRequestTable(reqType string) error {
 
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTableName := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), state int, ts bigint, updatets bigint, resp varchar(1024));", reqTableName, reqStateTableName)
+	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), workerid varchar(64), state int, ts bigint, updatets bigint, resp varchar(1024));", reqTableName, reqStateTableName)
 
 	_, err = tx.Exec(cmd)
 	if nil != err {
@@ -117,12 +117,12 @@ func (p *Pgdb) RemoveRequestTable(reqType string) error {
 	return nil
 }
 
-func (p *Pgdb) UpdateRequestState(reqType, reqId, resp string, reqState int) error {
+func (p *Pgdb) UpdateRequestState(reqType, reqId, workerid, resp string, reqState int) error {
 	db := p.db
 
 	reqStateTable := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("update %s set state = %d, resp = '%s', updatets = %d where reqid = '%s';",
-		reqStateTable, reqState, resp, time.Now().UnixNano(), reqId)
+	cmd := fmt.Sprintf("update %s set workerid = '%s', state = %d, resp = '%s', updatets = %d where reqid = '%s';",
+		reqStateTable, workerid, reqState, resp, time.Now().UnixNano(), reqId)
 	fmt.Println("cmd>>", cmd)
 	_, err := db.Exec(cmd)
 	if nil != err {
