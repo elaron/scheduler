@@ -61,7 +61,7 @@ func (p *Pgdb) CreateNewRequestTable(reqType string) error {
 
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTableName := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("begin transaction;create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), state int, ts bigint, resp varchar(1024));end transaction;", reqTableName, reqStateTableName)
+	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), state int, ts bigint, resp varchar(1024));", reqTableName, reqStateTableName)
 
 	_, err = tx.Exec(cmd)
 	if nil != err {
