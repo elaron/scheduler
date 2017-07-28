@@ -26,7 +26,7 @@ func Test_CreateRequestTable_1(t *testing.T) {
 		t.Error("[CASE: Test_CreateRequestTable_1 create table FAIL!] ", err)
 		return
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		reqId := fmt.Sprintf("abcd%d", i)
 		reqBody := fmt.Sprintf("abcd%d_body", i)
 		err = p.InsertNewRequest(reqType, reqId, reqBody)
@@ -44,6 +44,12 @@ func Test_CreateRequestTable_1(t *testing.T) {
 
 		}
 	}
+	arr := p.GetUnprocessRequest(reqType, 3)
+	if 0 == len(arr) {
+		t.Error("CASE: Test_CreateRequestTable_1 get  requestFAIL!")
+		return
+	}
+	t.Log(arr)
 
 	t.Log("[CASE Test_CreateRequestTable_1 success]")
 }

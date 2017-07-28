@@ -129,3 +129,31 @@ func (p *Pgdb) UpdateRequestState(reqType, reqId, resp string, reqState int) err
 	}
 	return nil
 }
+
+func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []string) {
+	db := p.db
+	reqTableName := comm.GetReqTableName(reqType)
+	reqStateTable := comm.GetReqStateTableName(reqType)
+
+	cmd := fmt.Sprintf("select * from %s where reqid in (select reqid from %s  where state=0 order by ts limit %d);",
+		reqTableName, reqStateTable, n)
+
+	rows, err := db.Query(cmd)
+	if nil != err {
+		fmt.Println(err)
+		return
+	}
+
+	for rows.Next() {
+		var reqId, reqBody string
+		err = rows.Scan(&reqId, &reqBody)
+		if nil != err {
+			fmt.Println(err)
+			return
+		}
+		res = append(res, reqId)
+		res = append(res, reqBody)
+		fmt.Println("reqid | reqbody ", reqId, reqBody)
+	}
+	return res
+}
