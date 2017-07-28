@@ -61,7 +61,7 @@ func (p *Pgdb) CreateNewRequestTable(reqType string) error {
 
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTableName := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), workerid varchar(64), state int, ts bigint, updatets bigint, resp varchar(1024));", reqTableName, reqStateTableName)
+	cmd := fmt.Sprintf("create table %s(reqid varchar(64), subscribe boolean, noticeaddress varchar(1024), reqbody varchar(4096));create table %s(reqid varchar(64), workerid varchar(64), state int, ts bigint, updatets bigint, resp varchar(1024));", reqTableName, reqStateTableName)
 
 	_, err = tx.Exec(cmd)
 	if nil != err {
@@ -73,7 +73,7 @@ func (p *Pgdb) CreateNewRequestTable(reqType string) error {
 	return nil
 }
 
-func (p *Pgdb) InsertNewRequest(reqType, reqId, reqBody string) error {
+func (p *Pgdb) InsertNewRequest(reqType, reqId, reqBody, noticAddr string, subscribe bool) error {
 	db := p.db
 	tx, err := db.Begin()
 	if nil != err {
@@ -85,8 +85,8 @@ func (p *Pgdb) InsertNewRequest(reqType, reqId, reqBody string) error {
 	reqStateTable := comm.GetReqStateTableName(reqType)
 	ts := time.Now().UnixNano()
 
-	cmd := fmt.Sprintf("insert into %s(reqid,reqbody) values('%s','%s'); insert into %s(reqid, state, ts, updatets) values('%s', %d, %d, %d);",
-		reqestTable, reqId, reqBody,
+	cmd := fmt.Sprintf("insert into %s(reqid,subscribe,noticeaddress,reqbody) values('%s',%t,'%s','%s'); insert into %s(reqid, state, ts, updatets) values('%s', %d, %d, %d);",
+		reqestTable, reqId, subscribe, noticAddr, reqBody,
 		reqStateTable, reqId, 0, ts, ts)
 
 	_, err = tx.Exec(cmd)
@@ -123,7 +123,6 @@ func (p *Pgdb) UpdateRequestState(reqType, reqId, workerid, resp string, reqStat
 	reqStateTable := comm.GetReqStateTableName(reqType)
 	cmd := fmt.Sprintf("update %s set workerid = '%s', state = %d, resp = '%s', updatets = %d where reqid = '%s';",
 		reqStateTable, workerid, reqState, resp, time.Now().UnixNano(), reqId)
-	fmt.Println("cmd>>", cmd)
 	_, err := db.Exec(cmd)
 	if nil != err {
 		return err
@@ -147,8 +146,9 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWit
 	}
 
 	for rows.Next() {
-		var reqId, reqBody string
-		err = rows.Scan(&reqId, &reqBody)
+		var reqId, reqBody, noticeAddr string
+		var subscribe bool
+		err = rows.Scan(&reqId, &subscribe, &noticeAddr, &reqBody)
 		if nil != err {
 			fmt.Println(err)
 			e = err

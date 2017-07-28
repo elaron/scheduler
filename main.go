@@ -16,7 +16,7 @@ var g_db *db.Pgdb
 func addRequest(reqType string, request string) {
 
 	id := fmt.Sprintf("%s", uuid.NewV4())
-	err := g_db.InsertNewRequest(reqType, id, request)
+	err := g_db.InsertNewRequest(reqType, id, request, "", false)
 	if nil != err {
 		g_log.Info.Println("Add request fail, ", err)
 		return

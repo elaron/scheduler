@@ -29,7 +29,12 @@ func Test_CreateRequestTable_1(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		reqId := fmt.Sprintf("abcd%d", i)
 		reqBody := fmt.Sprintf("abcd%d_body", i)
-		err = p.InsertNewRequest(reqType, reqId, reqBody)
+
+		if i%3 == 0 {
+			err = p.InsertNewRequest(reqType, reqId, reqBody, "notice me here", true)
+		} else {
+			err = p.InsertNewRequest(reqType, reqId, reqBody, "", false)
+		}
 		if nil != err {
 			t.Error("CASE: Test_CreateRequestTable_1 insert new requestFAIL!", err)
 			return
