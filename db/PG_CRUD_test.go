@@ -45,7 +45,7 @@ func Test_CreateRequestTable_1(t *testing.T) {
 		}
 	}
 	arr := p.GetUnprocessRequest(reqType, 3)
-	if 0 == len(arr) {
+	if 3 != len(arr) {
 		t.Error("CASE: Test_CreateRequestTable_1 get  requestFAIL!")
 		return
 	}

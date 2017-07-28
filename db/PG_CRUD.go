@@ -61,7 +61,7 @@ func (p *Pgdb) CreateNewRequestTable(reqType string) error {
 
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTableName := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), state int, ts bigint, resp varchar(1024));", reqTableName, reqStateTableName)
+	cmd := fmt.Sprintf("create table %s(reqid varchar(64), reqbody varchar(4096));create table %s(reqid varchar(64), state int, ts bigint, updatets bigint, resp varchar(1024));", reqTableName, reqStateTableName)
 
 	_, err = tx.Exec(cmd)
 	if nil != err {
@@ -83,10 +83,11 @@ func (p *Pgdb) InsertNewRequest(reqType, reqId, reqBody string) error {
 
 	reqestTable := comm.GetReqTableName(reqType)
 	reqStateTable := comm.GetReqStateTableName(reqType)
+	ts := time.Now().UnixNano()
 
-	cmd := fmt.Sprintf("insert into %s(reqid,reqbody) values('%s','%s'); insert into %s(reqid, state, ts) values('%s', %d, %d);",
+	cmd := fmt.Sprintf("insert into %s(reqid,reqbody) values('%s','%s'); insert into %s(reqid, state, ts, updatets) values('%s', %d, %d, %d);",
 		reqestTable, reqId, reqBody,
-		reqStateTable, reqId, 0, time.Now().UnixNano())
+		reqStateTable, reqId, 0, ts, ts)
 
 	_, err = tx.Exec(cmd)
 	if nil != err {
@@ -120,8 +121,8 @@ func (p *Pgdb) UpdateRequestState(reqType, reqId, resp string, reqState int) err
 	db := p.db
 
 	reqStateTable := comm.GetReqStateTableName(reqType)
-	cmd := fmt.Sprintf("update %s set state = %d, resp = '%s' where reqid = '%s';",
-		reqStateTable, reqState, resp, reqId)
+	cmd := fmt.Sprintf("update %s set state = %d, resp = '%s', updatets = %d where reqid = '%s';",
+		reqStateTable, reqState, resp, time.Now().UnixNano(), reqId)
 	fmt.Println("cmd>>", cmd)
 	_, err := db.Exec(cmd)
 	if nil != err {
@@ -130,7 +131,7 @@ func (p *Pgdb) UpdateRequestState(reqType, reqId, resp string, reqState int) err
 	return nil
 }
 
-func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []string) {
+func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWithUuid) {
 	db := p.db
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTable := comm.GetReqStateTableName(reqType)
@@ -151,8 +152,8 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []string) {
 			fmt.Println(err)
 			return
 		}
-		res = append(res, reqId)
-		res = append(res, reqBody)
+		tmp := comm.RequestWithUuid{Id: reqId, Body: reqBody}
+		res = append(res, tmp)
 		fmt.Println("reqid | reqbody ", reqId, reqBody)
 	}
 	return res
