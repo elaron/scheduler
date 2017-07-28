@@ -72,10 +72,7 @@ func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 func clean(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
-
-	g_db.CleanRequestStateTable(reqType)
-	g_db.CleanRequestWaitingQueue(reqType)
-	g_db.CleanRequestTable(reqType)
+	g_db.RemoveRequestTable(reqType)
 }
 
 func setupRequestService() {

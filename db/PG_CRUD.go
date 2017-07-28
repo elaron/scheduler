@@ -117,7 +117,7 @@ func (p *Pgdb) RemoveRequestTable(reqType string) error {
 	return nil
 }
 
-func (p *Pgdb) UpdateRequestState(reqType, reqId, workerid, resp string, reqState int) error {
+func (p *Pgdb) UpdateRequestState(reqType, reqId, workerid, resp string, reqState comm.REQUEST_STATE_TYPE) error {
 	db := p.db
 
 	reqStateTable := comm.GetReqStateTableName(reqType)
@@ -131,7 +131,7 @@ func (p *Pgdb) UpdateRequestState(reqType, reqId, workerid, resp string, reqStat
 	return nil
 }
 
-func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWithUuid) {
+func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWithUuid, e error) {
 	db := p.db
 	reqTableName := comm.GetReqTableName(reqType)
 	reqStateTable := comm.GetReqStateTableName(reqType)
@@ -142,6 +142,7 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWit
 	rows, err := db.Query(cmd)
 	if nil != err {
 		fmt.Println(err)
+		e = err
 		return
 	}
 
@@ -150,11 +151,12 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWit
 		err = rows.Scan(&reqId, &reqBody)
 		if nil != err {
 			fmt.Println(err)
+			e = err
 			return
 		}
 		tmp := comm.RequestWithUuid{Id: reqId, Body: reqBody}
 		res = append(res, tmp)
 		fmt.Println("reqid | reqbody ", reqId, reqBody)
 	}
-	return res
+	return
 }

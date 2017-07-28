@@ -2,7 +2,6 @@ package comm
 
 import (
 	"fmt"
-	"time"
 )
 
 const (
@@ -17,16 +16,19 @@ const (
 type REQUEST_STATE_TYPE int32
 
 type RequestState struct {
-	RequestId string
-	WorkerId  string
-	State     REQUEST_STATE_TYPE
-	Timestamp [REQUEST_STAT_TYPE_BUTT]time.Time
+	RequestId       string
+	WorkerId        string
+	State           REQUEST_STATE_TYPE
+	CreateTimestamp int64
+	UpdateTimestamp int64
+	Response        string
 }
 
 type ReqStateReport struct {
 	RequestId string
 	WorkerId  string
 	State     REQUEST_STATE_TYPE
+	Response  string
 }
 
 type RequestArray struct {

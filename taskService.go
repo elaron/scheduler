@@ -54,7 +54,7 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = updateRequestState(reqType, stateReport.RequestId, stateReport.WorkerId, stateReport.State)
+	err = updateRequestState(reqType, stateReport)
 	if nil != err {
 		rw.Write([]byte(err.Error()))
 	}
