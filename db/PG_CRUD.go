@@ -115,3 +115,17 @@ func (p *Pgdb) RemoveRequestTable(reqType string) error {
 	}
 	return nil
 }
+
+func (p *Pgdb) UpdateRequestState(reqType, reqId, resp string, reqState int) error {
+	db := p.db
+
+	reqStateTable := comm.GetReqStateTableName(reqType)
+	cmd := fmt.Sprintf("update %s set state = %d, resp = '%s' where reqid = '%s';",
+		reqStateTable, reqState, resp, reqId)
+	fmt.Println("cmd>>", cmd)
+	_, err := db.Exec(cmd)
+	if nil != err {
+		return err
+	}
+	return nil
+}

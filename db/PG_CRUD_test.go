@@ -34,6 +34,15 @@ func Test_CreateRequestTable_1(t *testing.T) {
 			t.Error("CASE: Test_CreateRequestTable_1 insert new requestFAIL!", err)
 			return
 		}
+
+		if i%2 == 0 {
+			err = p.UpdateRequestState(reqType, reqId, "some response", 2)
+			if nil != err {
+				t.Error("CASE: Test_CreateRequestTable_1 update  requestFAIL!", err)
+				return
+			}
+
+		}
 	}
 
 	t.Log("[CASE Test_CreateRequestTable_1 success]")
