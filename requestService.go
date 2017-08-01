@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"scheduler/common"
 	"strconv"
+	"strings"
 )
 
 func fetchRequest(rw http.ResponseWriter, req *http.Request) {
@@ -31,17 +31,32 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 
 func createRequest(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
+
 	reqType := req.FormValue("type")
+	subscribe := req.FormValue("subscribe")
+	noticeaddr := req.FormValue("noticeaddr")
+	body := req.FormValue("body")
 
-	body, err := ioutil.ReadAll(req.Body)
-	if nil != err {
-		g_log.Info.Println("Decode post request body fail, ", err)
-		return
+	sub := false
+	if strings.ToUpper(subscribe) == "TRUE" {
+		sub = true
 	}
-	defer req.Body.Close()
 
-	g_log.Debug.Println("Create request:", reqType, string(body))
-	addRequest(reqType, string(body))
+	fmt.Println(reqType, subscribe, noticeaddr, body)
+	g_log.Debug.Println("Create request:", reqType, body)
+
+	var resp comm.CommonResponse
+	id, err := addRequest(reqType, noticeaddr, body, sub)
+
+	if nil != err {
+		resp.StateCode = comm.OP_ERROR
+		resp.Msg = err.Error()
+	} else {
+		resp.StateCode = comm.OP_SUCCESS
+		resp.Msg = id
+	}
+
+	resp.Send(rw)
 }
 
 func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
@@ -69,15 +84,8 @@ func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 }
 
-func clean(rw http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	reqType := req.FormValue("type")
-	g_db.RemoveRequestTable(reqType)
-}
-
-func setupRequestService() {
-	g_log.Info.Println("Listening Port 1234 for request...")
+func setupManageService() {
+	g_log.Info.Println("Listening Port 6666 for request...")
 	http.HandleFunc("/request", requestOpDispatch)
-	http.HandleFunc("/clean", clean)
-	http.ListenAndServe(":1234", nil)
+	http.ListenAndServe(":6666", nil)
 }

@@ -7,7 +7,7 @@ import (
 
 func Test_CreateRequestTable_1(t *testing.T) {
 	para := &DbConnPara{
-		Host:     "127.0.0.1",
+		Host:     "192.168.65.132",
 		Port:     5432,
 		User:     "postgres",
 		Password: "postgres",

@@ -90,7 +90,7 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 }
 
 func setupWorkerService() {
-	g_log.Info.Println("Listening Port 2345 for worker...")
+	g_log.Info.Println("Listening Port 6668 for worker...")
 	http.HandleFunc("/task", taskOpDispatch)
-	http.ListenAndServe(":2345", nil)
+	http.ListenAndServe(":6668", nil)
 }

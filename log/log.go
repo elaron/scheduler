@@ -14,7 +14,7 @@ type Log struct {
 
 func (l *Log) InitLogger(prefix string) error {
 
-	folderPath := "/var/log/sched"
+	folderPath := "/Users/weiyudi/Applications/log"
 	err := os.MkdirAll(folderPath, 0666)
 	if nil != err {
 		s := fmt.Sprintf("Init logger fail, %s %s", folderPath, err.Error())

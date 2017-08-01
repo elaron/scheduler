@@ -1,7 +1,9 @@
 package comm
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 const (
@@ -39,6 +41,22 @@ type RequestArray struct {
 type RequestWithUuid struct {
 	Id   string
 	Body string
+}
+
+const (
+	OP_SUCCESS = 100
+	OP_ERROR   = 900
+)
+
+type CommonResponse struct {
+	StateCode int
+	Msg       string
+}
+
+func (cr *CommonResponse) Send(rw http.ResponseWriter) error {
+	b, err := json.Marshal(cr)
+	rw.Write(b)
+	return err
 }
 
 func GetReqTableName(reqType string) string {
