@@ -25,7 +25,7 @@ func addRequest(reqType, noticeAddr, requestBody string, sub bool) (string, erro
 	return id, nil
 }
 
-func getRequest(reqType string, num int) (reqNum int, reqs []comm.RequestWithUuid) {
+func getRequest(reqType string, num int) (reqs []comm.RequestWithUuid) {
 
 	reqs, err := g_db.GetUnprocessRequest(reqType, num)
 	if nil != err {

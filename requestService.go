@@ -18,8 +18,8 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	}
 	g_log.Debug.Println("Get request:", reqType, num)
 
-	reqNum, reqArr := getRequest(reqType, num)
-	response := comm.RequestArray{Num: reqNum, RequestList: reqArr}
+	reqArr := getRequest(reqType, num)
+	response := comm.RequestArray{Num: len(reqArr), RequestList: reqArr}
 	b, err := json.Marshal(response)
 	if nil != err {
 		g_log.Info.Println("Encoding response fail", err)

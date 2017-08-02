@@ -12,19 +12,28 @@ func fetchTask(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
 	if nil != err {
-		g_log.Info.Println("Decode _num_ parameter fail, ", err)
-		return
+		g_log.Info.Println("Decode _num_ parameter fail,set to default num=1, ", err)
+		num = 1
 	}
 
-	reqNum, reqArr := getRequest(reqType, num)
-	response := comm.RequestArray{Num: reqNum, RequestList: reqArr}
+	var resp comm.CommonResponse
+
+	reqArr := getRequest(reqType, num)
+	response := comm.RequestArray{Num: len(reqArr), RequestList: reqArr}
+
 	b, err := json.Marshal(response)
-	if nil != err {
-		g_log.Info.Println("Encoding response fail", err)
-		return
-	}
+	if nil == err {
+		resp.StateCode = comm.OP_SUCCESS
+		resp.Msg = string(b)
+	} else {
+		s := fmt.Sprintf("Encoding response fail, %s", err.Error())
+		resp.StateCode = comm.OP_ERROR
+		resp.Msg = s
 
-	rw.Write(b)
+		g_log.Info.Println(s)
+	}
+	fmt.Println("Get task!")
+	resp.Send(rw)
 }
 
 func updateTask(rw http.ResponseWriter, req *http.Request) {
@@ -68,12 +77,10 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 	switch req.Method {
 	case "GET":
-		fetchRequest(rw, req)
+		fetchTask(rw, req)
 
 	case "POST":
-		s := "It's illegal to create task!"
-		g_log.Info.Println(s)
-		rw.Write([]byte(s))
+		fetchTask(rw, req)
 
 	case "PUT":
 		updateTask(rw, req)
