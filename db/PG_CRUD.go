@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
 	"scheduler/common"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 const (

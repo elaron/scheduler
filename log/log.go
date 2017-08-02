@@ -12,7 +12,7 @@ type Log struct {
 	Debug *log.Logger
 }
 
-func (l *Log) InitLogger(prefix string) error {
+func (l *Log) InitLogger(filename string) error {
 
 	folderPath := "/Users/weiyudi/Applications/log"
 	err := os.MkdirAll(folderPath, 0666)
@@ -21,8 +21,8 @@ func (l *Log) InitLogger(prefix string) error {
 		return errors.New(s)
 	}
 
-	infoLogName := fmt.Sprintf("%s/%s-info.log", folderPath, prefix)
-	debugLogName := fmt.Sprintf("%s/%s-debug.log", folderPath, prefix)
+	infoLogName := fmt.Sprintf("%s/%s-info.log", folderPath, filename)
+	debugLogName := fmt.Sprintf("%s/%s-debug.log", folderPath, filename)
 
 	infoHandler, err := os.OpenFile(infoLogName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if nil != err {

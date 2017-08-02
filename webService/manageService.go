@@ -1,16 +1,20 @@
 // manageService.go
-package main
+package webService
 
 import (
 	"net/http"
 	"scheduler/common"
+	"scheduler/model"
 )
+
+var g_cephManager *model.CephManager
+var g_reqHandler *model.RequestHandler
 
 func addRequestType(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
 
-	err := g_db.CreateNewRequestTable(reqType)
+	err := g_reqHandler.CreateNewRequestType(reqType)
 	var resp comm.CommonResponse
 
 	if nil != err {
@@ -29,7 +33,7 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	reqType := req.FormValue("type")
 
-	err := g_db.RemoveRequestTable(reqType)
+	err := g_reqHandler.DeleteRequestType(reqType)
 	var resp comm.CommonResponse
 
 	if nil != err {
@@ -44,8 +48,19 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 }
 
 func setupRequestService() {
-	g_log.Info.Println("Listening Port 6667 for manage ...")
+	g_reqHandler.InfoLog("Listening Port 6667 for manage ...")
+
 	http.HandleFunc("/addRequestType", addRequestType)
 	http.HandleFunc("/clean", clean)
 	http.ListenAndServe(":6667", nil)
+}
+
+func SetupWebService(cephManager *model.CephManager) {
+
+	g_cephManager = cephManager
+	g_reqHandler = cephManager.GetRequestHandler()
+
+	go setupRequestService()
+	go setupWorkerService()
+	go setupManageService()
 }

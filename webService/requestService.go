@@ -1,4 +1,4 @@
-package main
+package webService
 
 import (
 	"encoding/json"
@@ -13,16 +13,16 @@ func fetchRequest(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
 	if nil != err {
-		g_log.Info.Println("Decode _num_ parameter fail, ", err)
+		g_reqHandler.InfoLog("Decode _num_ parameter fail, ", err)
 		num = 1
 	}
-	g_log.Debug.Println("Get request:", reqType, num)
+	g_reqHandler.InfoLog("Get request:", reqType, num)
 
-	reqArr := getRequest(reqType, num)
+	reqArr := g_reqHandler.GetUnprocessRequest(reqType, num)
 	response := comm.RequestArray{Num: len(reqArr), RequestList: reqArr}
 	b, err := json.Marshal(response)
 	if nil != err {
-		g_log.Info.Println("Encoding response fail", err)
+		g_reqHandler.InfoLog("Encoding response fail", err)
 		return
 	}
 
@@ -43,10 +43,10 @@ func createRequest(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Println(reqType, subscribe, noticeaddr, body)
-	g_log.Debug.Println("Create request:", reqType, body)
+	g_reqHandler.InfoLog("Create request:", reqType, body)
 
 	var resp comm.CommonResponse
-	id, err := addRequest(reqType, noticeaddr, body, sub)
+	id, err := g_reqHandler.AddNewRequest(reqType, noticeaddr, body, sub)
 
 	if nil != err {
 		resp.StateCode = comm.OP_ERROR
@@ -70,22 +70,22 @@ func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 	case "PUT":
 		s := "It's illegal to update request!"
-		g_log.Info.Println(s)
+		g_reqHandler.InfoLog(s)
 		rw.Write([]byte(s))
 
 	case "DELETE":
 		s := "It's illegal to update request!"
-		g_log.Info.Println(s)
+		g_reqHandler.InfoLog(s)
 		rw.Write([]byte(s))
 
 	default:
-		g_log.Info.Println("Unknown request Method: ", req.Method)
+		g_reqHandler.InfoLog("Unknown request Method: ", req.Method)
 	}
 
 }
 
 func setupManageService() {
-	g_log.Info.Println("Listening Port 6666 for request...")
+	g_reqHandler.InfoLog("Listening Port 6666 for request...")
 	http.HandleFunc("/request", requestOpDispatch)
 	http.ListenAndServe(":6666", nil)
 }

@@ -1,4 +1,4 @@
-package main
+package webService
 
 import (
 	"encoding/json"
@@ -12,13 +12,13 @@ func fetchTask(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
 	if nil != err {
-		g_log.Info.Println("Decode _num_ parameter fail,set to default num=1, ", err)
+		g_reqHandler.InfoLog("Decode _num_ parameter fail,set to default num=1, ", err)
 		num = 1
 	}
 
 	var resp comm.CommonResponse
 
-	reqArr := getRequest(reqType, num)
+	reqArr := g_reqHandler.GetUnprocessRequest(reqType, num)
 	response := comm.RequestArray{Num: len(reqArr), RequestList: reqArr}
 
 	b, err := json.Marshal(response)
@@ -30,7 +30,7 @@ func fetchTask(rw http.ResponseWriter, req *http.Request) {
 		resp.StateCode = comm.OP_ERROR
 		resp.Msg = s
 
-		g_log.Info.Println(s)
+		g_reqHandler.InfoLog(s)
 	}
 	fmt.Println("Get task!")
 	resp.Send(rw)
@@ -45,7 +45,7 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 	var stateReport comm.ReqStateReport
 	err := decoder.Decode(&stateReport)
 	if nil != err {
-		g_log.Info.Println("Decode request stateReport  fail, ", err)
+		g_reqHandler.InfoLog("Decode request stateReport  fail, ", err)
 		return
 	}
 	defer req.Body.Close()
@@ -53,17 +53,17 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 	//print update task stateReport
 	str, err := json.Marshal(&stateReport)
 	if nil != err {
-		g_log.Info.Println("Decode ReqStateReport fail", err)
+		g_reqHandler.InfoLog("Decode ReqStateReport fail", err)
 		return
 	}
-	g_log.Debug.Println("Update request:", reqType, string(str))
+	g_reqHandler.InfoLog("Update request:", reqType, string(str))
 
 	if stateReport.State >= comm.REQUEST_STAT_TYPE_BUTT {
-		g_log.Info.Println("Unknown State type", stateReport.State)
+		g_reqHandler.InfoLog("Unknown State type", stateReport.State)
 		return
 	}
 
-	err = updateRequestState(reqType, stateReport)
+	err = g_reqHandler.UpdateRequestState(reqType, stateReport)
 	if nil != err {
 		rw.Write([]byte(err.Error()))
 	}
@@ -87,17 +87,17 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 	case "DELETE":
 		s := "It's illegal to delete task!"
-		g_log.Info.Println(s)
+		g_reqHandler.InfoLog(s)
 		rw.Write([]byte(s))
 
 	default:
-		g_log.Info.Println("Unknown request Method: ", req.Method)
+		g_reqHandler.InfoLog("Unknown request Method: ", req.Method)
 	}
 
 }
 
 func setupWorkerService() {
-	g_log.Info.Println("Listening Port 6668 for worker...")
+	g_reqHandler.InfoLog("Listening Port 6668 for worker...")
 	http.HandleFunc("/task", taskOpDispatch)
 	http.ListenAndServe(":6668", nil)
 }
