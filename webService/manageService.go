@@ -3,9 +3,12 @@ package webService
 
 import (
 	"net/http"
+	"scheduler/auth"
 	"scheduler/common"
 	"scheduler/model"
 )
+
+var g_auth *auth.AuthManager
 
 var g_cephManager *model.CephManager
 var g_reqHandler *model.RequestHandler
@@ -55,7 +58,7 @@ func setupRequestService() {
 	http.ListenAndServe(":6667", nil)
 }
 
-func SetupWebService(cephManager *model.CephManager) {
+func SetupWebService(cephManager *model.CephManager, a *auth.AuthManager) {
 
 	g_cephManager = cephManager
 	g_reqHandler = cephManager.GetRequestHandler()

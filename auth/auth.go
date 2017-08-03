@@ -2,15 +2,14 @@ package auth
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/satori/go.uuid"
 	"math"
-	"scheduler/common"
+	"scheduler/db"
 	"scheduler/log"
 	"time"
+
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -19,116 +18,60 @@ const (
 	_ACCESS = "access"
 )
 
-type Auth struct {
-	pool *pool.Pool
-	log  logger.Log
+type AuthManager struct {
+	log *logger.Log
+	db  *db.Pgdb
 }
 
-func (a *Auth) Init(address string, port int, poolSize int, prefix string) {
-	addr := fmt.Sprintf("%s:%d", address, port)
-	p, err := pool.New("tcp", addr, poolSize)
+func NewAuthManager(dbParm *db.DbConnPara) *AuthManager {
+	auth := new(AuthManager)
+
+	auth.log = new(logger.Log)
+	err := auth.log.InitLogger("Auth")
 	if nil != err {
-		a.log.Info.Println("Connect to redis fail, ", err)
-		return
+		return nil
 	}
 
-	a.pool = p
+	auth.db = db.NewPgDb(dbParm)
+	if nil == auth.db {
+		return nil
+	}
 
-	tag := fmt.Sprintf("%s-auth-", prefix)
-	a.log.InitLogger(tag)
+	return auth
 }
 
-func (a *Auth) RegisterUser(username string, accessList []int) (string, error) {
+func (a *AuthManager) RegisterUser(username string, accessList []string) (string, error) {
 
-	var token string
-	field := comm.GetUserTable(username)
+	token := fmt.Sprintf("%s", uuid.NewV4())
+	err := a.db.CreateNewUser(username, token, accessList)
 
-	resp := a.pool.Cmd("HEXISTS", field, _TOKEN)
-	if nil == resp.Err {
-		exist, _ := resp.Int()
-		if 1 == exist {
-			resp = a.pool.Cmd("HGET", field, _TOKEN)
-			if nil == resp.Err {
-				token, _ = resp.Str()
-			}
-		}
-	}
-
-	if len(token) == 0 {
-		token = fmt.Sprintf("%s", uuid.NewV4())
-	}
-
-	access, err := json.Marshal(accessList)
-	if nil != err {
-		s := fmt.Sprintf("Encoding accessList fail, %s", err.Error())
-		a.log.Info.Println(s)
-		return "", errors.New(s)
-	}
-
-	c, err := a.pool.Get()
-	if nil != err {
-		s := fmt.Sprintf("Get connection from pool fail, ", err.Error())
-		a.log.Info.Println(s)
-		return "", errors.New(s)
-	}
-	defer a.pool.Put(c)
-
-	c.Cmd("MULTI")
-	c.Cmd("HSET", field, _NAME, username)
-	c.Cmd("HSET", field, _TOKEN, token)
-	c.Cmd("HSET", field, _ACCESS, access)
-	c.Cmd("EXEC")
-
-	return token, nil
+	return token, err
 }
 
-func (a *Auth) getUserBaseToken(username string) string {
-	field := comm.GetUserTable(username)
-	resp := a.pool.Cmd("HGET", field, _TOKEN)
-	if nil != resp.Err {
-		a.log.Info.Println("Get user base token fail, ", username, resp.Err)
+func (a *AuthManager) getUserBaseToken(username string) string {
+	userAuthInfo, err := a.db.GetUserAuthInfo(username)
+	if nil != err {
 		return ""
 	}
 
-	token, err := resp.Str()
-	if nil != err {
-		a.log.Info.Println("Decode base token fail, ", username, err)
-		return ""
-	}
-
-	return token
+	return userAuthInfo.Basetoken
 }
 
-func (a *Auth) getAccessList(username string) []int {
-	field := comm.GetUserTable(username)
-	resp := a.pool.Cmd("HGET", field, _ACCESS)
-	if nil != resp.Err {
-		a.log.Info.Println("Get user base access fail, ", username, resp.Err)
-		return []int{}
-	}
-
-	access, err := resp.Str()
+func (a *AuthManager) getAccessList(username string) []string {
+	userAuthInfo, err := a.db.GetUserAuthInfo(username)
 	if nil != err {
-		a.log.Info.Println("Decode base access fail, ", username, err)
-		return []int{}
+		return []string{}
 	}
 
-	var accessList []int
-	err = json.Unmarshal([]byte(access), &accessList)
-	if nil != err {
-		a.log.Info.Println("Decode access list from json fail, ", username, err)
-		return []int{}
-	}
-
-	return accessList
+	return userAuthInfo.AccList
 }
 
-func (a *Auth) DeleteUser(username string) {
-	field := comm.GetUserTable(username)
-	a.pool.Cmd("DEL", field)
+func (a *AuthManager) DeleteUser(username string) error {
+	err := a.db.DeleteUser(username)
+	return err
 }
 
-func (a *Auth) CheckUserSignitural(username, timeStr, chksum string) (bool, error) {
+func (a *AuthManager) CheckUserSignitural(username, timeStr, chksum string) (bool, error) {
 	token := a.getUserBaseToken(username)
 	if len(token) == 0 {
 		s := fmt.Sprintf("Get %s base token fail.", username)
