@@ -15,8 +15,10 @@ type RequestInfo struct {
 	ReqBody   string
 }
 
+type REQUEST_STATE_TYPE int32
+
 const (
-	REQUEST_IN_LINE = iota
+	REQUEST_IN_LINE REQUEST_STATE_TYPE = iota
 	REQUEST_BEGIN_PRO
 	REQUEST_PAUSE
 	REQUEST_FINISH
@@ -24,10 +26,16 @@ const (
 	REQUEST_STAT_TYPE_BUTT
 )
 
-type StateEnum2Str func(REQUEST_STATE_TYPE) string
-type Str2StateEnum func(string) REQUEST_STATE_TYPE
+var reqStateName = map[REQUEST_STATE_TYPE]string{
+	REQUEST_IN_LINE:   "IN_LINE",
+	REQUEST_BEGIN_PRO: "BEGIN_PRO",
+	REQUEST_PAUSE:     "PAUSE",
+	REQUEST_CANCEL:    "CANCEL",
+}
 
-type REQUEST_STATE_TYPE int32
+func (s REQUEST_STATE_TYPE) String() string {
+	return reqStateName[s]
+}
 
 type RequestState struct {
 	RequestId       string

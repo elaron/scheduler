@@ -11,38 +11,13 @@ import (
 )
 
 type RequestHandler struct {
-	log      *logger.Log
-	db       *db.Pgdb
-	statStr  map[comm.REQUEST_STATE_TYPE]string
-	statEnum map[string]comm.REQUEST_STATE_TYPE
+	log *logger.Log
+	db  *db.Pgdb
 }
 
 func (rh *RequestHandler) Init(_log *logger.Log, _db *db.Pgdb) {
 	rh.log = _log
 	rh.db = _db
-
-	rh.statStr = make(map[comm.REQUEST_STATE_TYPE]string)
-	rh.statEnum = make(map[string]comm.REQUEST_STATE_TYPE)
-
-	rh.statStr[comm.REQUEST_IN_LINE] = "IN_LINE"
-	rh.statStr[comm.REQUEST_BEGIN_PRO] = "BEGIN_PRO"
-	rh.statStr[comm.REQUEST_PAUSE] = "PAUSE"
-	rh.statStr[comm.REQUEST_FINISH] = "FINISH"
-	rh.statStr[comm.REQUEST_CANCEL] = "CANCEL"
-
-	rh.statEnum["IN_LINE"] = comm.REQUEST_IN_LINE
-	rh.statEnum["BEGIN_PRO"] = comm.REQUEST_BEGIN_PRO
-	rh.statEnum["PAUSE"] = comm.REQUEST_PAUSE
-	rh.statEnum["FINISH"] = comm.REQUEST_FINISH
-	rh.statEnum["CANCEL"] = comm.REQUEST_CANCEL
-}
-
-func (rh *RequestHandler) StateStr(state comm.REQUEST_STATE_TYPE) string {
-	if state >= comm.REQUEST_STAT_TYPE_BUTT {
-		return "illegalType"
-	}
-
-	return rh.statStr[state]
 }
 
 func (rh *RequestHandler) InfoLog(v ...interface{}) {
@@ -98,7 +73,7 @@ func (rh *RequestHandler) UpdateRequestState(reqType string, sr comm.ReqStateRep
 
 func (rh *RequestHandler) GetRequestsState(reqType string, reqIDs []string) ([]comm.RequestState, error) {
 
-	stateList, err := rh.db.GetRequestsState(reqType, reqIDs, rh.StateStr)
+	stateList, err := rh.db.GetRequestsState(reqType, reqIDs)
 
 	if nil != err {
 		rh.log.Info.Println("Get request state fail, ", reqType, strings.Join(reqIDs, ","), err)

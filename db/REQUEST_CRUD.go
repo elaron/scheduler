@@ -197,7 +197,7 @@ func (p *Pgdb) GetRequests(reqType string, reqIds []string) ([]comm.RequestInfo,
 	return riList, nil
 }
 
-func (p *Pgdb) GetRequestsState(reqType string, reqIds []string, transFunc comm.StateEnum2Str) ([]comm.RequestState, error) {
+func (p *Pgdb) GetRequestsState(reqType string, reqIds []string) ([]comm.RequestState, error) {
 
 	var stateList []comm.RequestState
 	reqIDsStr := fmt.Sprintf("'%s'", strings.Join(reqIds, "','"))
@@ -227,7 +227,7 @@ func (p *Pgdb) GetRequestsState(reqType string, reqIds []string, transFunc comm.
 		rs := comm.RequestState{
 			RequestId:       rid,
 			WorkerId:        wid,
-			State:           transFunc(comm.REQUEST_STATE_TYPE(state)),
+			State:           state.String(),
 			CreateTimestamp: time.Unix(0, cts),
 			UpdateTimestamp: time.Unix(0, uts),
 			Response:        resp,
