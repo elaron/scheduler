@@ -147,9 +147,12 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWit
 		return
 	}
 
+	var (
+		subscribe                  bool
+		reqId, reqBody, noticeAddr string
+	)
+
 	for rows.Next() {
-		var reqId, reqBody, noticeAddr string
-		var subscribe bool
 		err = rows.Scan(&reqId, &subscribe, &noticeAddr, &reqBody)
 		if nil != err {
 			fmt.Println(err)
@@ -164,7 +167,11 @@ func (p *Pgdb) GetUnprocessRequest(reqType string, n int) (res []comm.RequestWit
 
 func (p *Pgdb) GetRequests(reqType string, reqIds []string) ([]comm.RequestInfo, error) {
 
-	var riList []comm.RequestInfo
+	var (
+		subscribe               bool
+		id, reqBody, noticeAddr string
+		riList                  []comm.RequestInfo
+	)
 
 	cmd := fmt.Sprintf("select * from %s where %s in (%s);",
 		comm.GetReqTableName(reqType),
@@ -177,8 +184,6 @@ func (p *Pgdb) GetRequests(reqType string, reqIds []string) ([]comm.RequestInfo,
 	}
 
 	for rows.Next() {
-		var id, reqBody, noticeAddr string
-		var subscribe bool
 		err = rows.Scan(&id, &subscribe, &noticeAddr, &reqBody)
 		if nil != err {
 			return riList, err
@@ -199,7 +204,12 @@ func (p *Pgdb) GetRequests(reqType string, reqIds []string) ([]comm.RequestInfo,
 
 func (p *Pgdb) GetRequestsState(reqType string, reqIds []string) ([]comm.RequestState, error) {
 
-	var stateList []comm.RequestState
+	var (
+		rid, wid, resp string
+		cts, uts       int64 //timestamp
+		state          comm.REQUEST_STATE_TYPE
+		stateList      []comm.RequestState
+	)
 	reqIDsStr := fmt.Sprintf("'%s'", strings.Join(reqIds, "','"))
 
 	cmd := fmt.Sprintf("select * from %s where %s in (%s);",
@@ -215,9 +225,6 @@ func (p *Pgdb) GetRequestsState(reqType string, reqIds []string) ([]comm.Request
 	}
 
 	for rows.Next() {
-		var rid, wid, resp string
-		var cts, uts int64 //timestamp
-		var state comm.REQUEST_STATE_TYPE
 
 		err = rows.Scan(&rid, &wid, &state, &cts, &uts, &resp)
 		if nil != err {
