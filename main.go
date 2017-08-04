@@ -10,14 +10,14 @@ import (
 )
 
 func main() {
-	para := &db.DbConnPara{
+	para_request := &db.DbConnPara{
 		Host:     "192.168.56.132",
 		Port:     5432,
 		User:     "postgres",
 		Password: "postgres",
 		Dbname:   "request"}
 
-	cephManager := model.NewCephManager(para)
+	cephManager := model.NewCephManager(para_request)
 	if nil == cephManager {
 		fmt.Println("Start SMP CephManager fail!")
 		return

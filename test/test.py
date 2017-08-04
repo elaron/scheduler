@@ -5,6 +5,7 @@ import requests
 import json
 
 requestServiceURL = 'http://127.0.0.1:6666/request'
+requestStateServiceURL = 'http://127.0.0.1:6666/requestState'
 manageServiceURL = 'http://127.0.0.1:6667/'
 taskServiceURL = 'http://127.0.0.1:6668/task'
 
@@ -102,15 +103,47 @@ class TestRequestHandling(unittest.TestCase):
 	def test_getTask(self):	
 		resp = requests.post(taskServiceURL+"?type=" + test_req_type)
 		code, msg = checkResponseCode(resp)
-		self.assertTrue(code)	
-		print(msg)
+		self.assertTrue(code)
+		
+	def test_getRequestState(self):
+		sub = True
+		noticeAddr = "notice me HERE"
+		body = "a new request--aaaa"
+		
+		parms = {
+			'type' : test_req_type,
+			'subscribe' : sub,
+			'noticeaddr' : noticeAddr,
+			'body': body
+		}
+		
+		reqIDs = []
+		itemNum = 5
+		
+		for i in range(itemNum):
+			resp = requests.post(requestServiceURL, data=parms)
+			code, msg = checkResponseCode(resp)
+			self.assertTrue(code)
+			reqIDs.append(msg)
+			
+		parms = {
+			'type' : test_req_type,
+			'reqIDs' : ','.join(reqIDs)
+		}
+		resp = requests.post(requestStateServiceURL, data=parms)
+		code, msg = checkResponseCode(resp)
+		self.assertTrue(code)
+		
+		jsonResp = json.loads(msg)
+		self.assertEqual(itemNum, jsonResp['Num'])
 		
 if __name__ == '__main__':
 	suite = unittest.TestSuite()
 	tests = [TestRequestHandling("test_clean"),
 		TestRequestHandling("test_createRequestTable"),
 		TestRequestHandling("test_insertNewRequest"),
-		TestRequestHandling("test_getTask")]
+		TestRequestHandling("test_getTask"),
+		TestRequestHandling("test_getRequestState")]
 	suite.addTests(tests)
 	
 	runner = unittest.TextTestRunner(verbosity=2)

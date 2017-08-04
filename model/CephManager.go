@@ -26,8 +26,7 @@ func NewCephManager(dbParm *db.DbConnPara) *CephManager {
 		return nil
 	}
 
-	manager.requestHandler.log = manager.log
-	manager.requestHandler.db = manager.db
+	manager.requestHandler.Init(manager.log, manager.db)
 
 	return manager
 }

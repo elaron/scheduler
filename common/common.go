@@ -4,7 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
+
+type RequestInfo struct {
+	ReqType   string
+	ReqId     string
+	Subscribe bool
+	SubAddr   string
+	ReqBody   string
+}
 
 const (
 	REQUEST_IN_LINE = iota
@@ -15,14 +24,17 @@ const (
 	REQUEST_STAT_TYPE_BUTT
 )
 
+type StateEnum2Str func(REQUEST_STATE_TYPE) string
+type Str2StateEnum func(string) REQUEST_STATE_TYPE
+
 type REQUEST_STATE_TYPE int32
 
 type RequestState struct {
 	RequestId       string
 	WorkerId        string
-	State           REQUEST_STATE_TYPE
-	CreateTimestamp int64
-	UpdateTimestamp int64
+	State           string
+	CreateTimestamp time.Time
+	UpdateTimestamp time.Time
 	Response        string
 }
 
@@ -31,6 +43,11 @@ type ReqStateReport struct {
 	WorkerId  string
 	State     REQUEST_STATE_TYPE
 	Response  string
+}
+
+type RequestStateArray struct {
+	Num       int
+	StateList []RequestState
 }
 
 type RequestArray struct {
