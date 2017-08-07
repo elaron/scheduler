@@ -38,6 +38,16 @@ func initConfig(config *SysConfig) {
 
 func main() {
 
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	if nil == ctx {
+		fmt.Println("Get Background context fail, stop SMP!")
+		return
+	}
+	defer cancel()
+
 	var conf SysConfig
 	initConfig(&conf)
 
@@ -67,15 +77,10 @@ func main() {
 		return
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	wg := &sync.WaitGroup{}
 	webService.SetupWebService(wg, &ctx, cephManager, a)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	s := <-c
-	cancel()
-	wg.Wait()
 	fmt.Println("Got signal:", s)
-
 }
