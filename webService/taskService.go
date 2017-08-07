@@ -98,7 +98,7 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 }
 
-func setupWorkerService(wg *sync.WaitGroup, ctx *context.Context) {
+func setupWorkerService(wg *sync.WaitGroup, ctx context.Context) {
 
 	server := &http.Server{Addr: _taskServAddr_, Handler: nil}
 
@@ -108,7 +108,7 @@ func setupWorkerService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	go func() {
 		select {
-		case <-(*ctx).Done():
+		case <-ctx.Done():
 			fmt.Println("Stop Task Server.")
 			server.Close()
 			wg.Done()

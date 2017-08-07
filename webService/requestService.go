@@ -101,7 +101,7 @@ func requestStateOpDispatch(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func setupManageService(wg *sync.WaitGroup, ctx *context.Context) {
+func setupManageService(wg *sync.WaitGroup, ctx context.Context) {
 
 	server := &http.Server{Addr: _requestServAddr_, Handler: nil}
 
@@ -110,7 +110,7 @@ func setupManageService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	go func() {
 		select {
-		case <-(*ctx).Done():
+		case <-ctx.Done():
 			fmt.Println("Stop Request Server.")
 			server.Close()
 			wg.Done()

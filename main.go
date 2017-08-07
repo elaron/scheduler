@@ -77,7 +77,7 @@ func main() {
 		return
 	}
 
-	webService.SetupWebService(wg, &ctx, cephManager, a)
+	webService.SetupWebService(wg, ctx, cephManager, a)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

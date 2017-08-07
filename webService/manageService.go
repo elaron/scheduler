@@ -59,7 +59,7 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 	resp.Send(rw)
 }
 
-func setupRequestService(wg *sync.WaitGroup, ctx *context.Context) {
+func setupRequestService(wg *sync.WaitGroup, ctx context.Context) {
 
 	server := &http.Server{Addr: _managerServAddr_, Handler: nil}
 
@@ -70,7 +70,7 @@ func setupRequestService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	go func() {
 		select {
-		case <-(*ctx).Done():
+		case <-ctx.Done():
 			fmt.Println("Stop Manager Server.")
 			server.Close()
 			wg.Done()
@@ -80,14 +80,16 @@ func setupRequestService(wg *sync.WaitGroup, ctx *context.Context) {
 	server.ListenAndServe()
 }
 
-func SetupWebService(wg *sync.WaitGroup, ctx *context.Context, cephManager *model.CephManager, a *auth.AuthManager) {
+func SetupWebService(wg *sync.WaitGroup, ctx context.Context, cephManager *model.CephManager, a *auth.AuthManager) {
 
 	g_cephManager = cephManager
 	g_reqHandler = cephManager.GetRequestHandler()
 
 	wg.Add(3)
 
-	go setupWorkerService(wg, ctx)
-	go setupManageService(wg, ctx)
-	go setupRequestService(wg, ctx)
+	c, _ := context.WithCancel(ctx)
+
+	go setupWorkerService(wg, c)
+	go setupManageService(wg, c)
+	go setupRequestService(wg, c)
 }
