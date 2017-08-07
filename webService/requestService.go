@@ -1,6 +1,7 @@
 package webService
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -99,9 +100,21 @@ func requestStateOpDispatch(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func setupManageService() {
-	g_reqHandler.InfoLog("Listening Port 6666 for request...")
+func setupManageService(ctx context.Context) {
+
+	server := &http.Server{Addr: _requestServAddr_, Handler: nil}
+
 	http.HandleFunc("/request", requestOpDispatch)
 	http.HandleFunc("/requestState", requestStateOpDispatch)
-	http.ListenAndServe(":6666", nil)
+
+	server.ListenAndServe()
+
+	g_reqHandler.InfoLog("Listening Port 6666 for request...")
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			server.Close()
+		}
+	}()
 }

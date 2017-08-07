@@ -137,6 +137,7 @@ class TestRequestHandling(unittest.TestCase):
 		jsonResp = json.loads(msg)
 		self.assertEqual(itemNum, jsonResp['Num'])
 		
+		
 if __name__ == '__main__':
 	suite = unittest.TestSuite()
 	tests = [TestRequestHandling("test_clean"),

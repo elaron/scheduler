@@ -1,6 +1,7 @@
 package webService
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -96,8 +97,20 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 }
 
-func setupWorkerService() {
-	g_reqHandler.InfoLog("Listening Port 6668 for worker...")
+func setupWorkerService(ctx context.Context) {
+
+	server := &http.Server{Addr: _taskServAddr_, Handler: nil}
+
 	http.HandleFunc("/task", taskOpDispatch)
-	http.ListenAndServe(":6668", nil)
+
+	server.ListenAndServe()
+
+	g_reqHandler.InfoLog("Listening Port 6668 for worker...")
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			server.Close()
+		}
+	}()
 }
