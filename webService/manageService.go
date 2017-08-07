@@ -3,10 +3,12 @@ package webService
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"scheduler/auth"
 	"scheduler/common"
 	"scheduler/model"
+	"sync"
 )
 
 const (
@@ -57,30 +59,35 @@ func clean(rw http.ResponseWriter, req *http.Request) {
 	resp.Send(rw)
 }
 
-func setupRequestService(ctx context.Context) {
+func setupRequestService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	server := &http.Server{Addr: _managerServAddr_, Handler: nil}
 
 	http.HandleFunc("/addRequestType", addRequestType)
 	http.HandleFunc("/clean", clean)
 
-	server.ListenAndServe()
 	g_reqHandler.InfoLog("Listening Port 6667 for manage ...")
 
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-(*ctx).Done():
+			fmt.Println("Stop Manager Server.")
 			server.Close()
+			wg.Done()
 		}
 	}()
+
+	server.ListenAndServe()
 }
 
-func SetupWebService(ctx context.Context, cephManager *model.CephManager, a *auth.AuthManager) {
+func SetupWebService(wg *sync.WaitGroup, ctx *context.Context, cephManager *model.CephManager, a *auth.AuthManager) {
 
 	g_cephManager = cephManager
 	g_reqHandler = cephManager.GetRequestHandler()
 
-	go setupRequestService(ctx)
-	go setupWorkerService(ctx)
-	go setupManageService(ctx)
+	wg.Add(3)
+
+	go setupWorkerService(wg, ctx)
+	go setupManageService(wg, ctx)
+	go setupRequestService(wg, ctx)
 }

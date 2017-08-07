@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"scheduler/common"
 	"strconv"
+	"sync"
 )
 
 func fetchTask(rw http.ResponseWriter, req *http.Request) {
@@ -97,20 +98,22 @@ func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
 
 }
 
-func setupWorkerService(ctx context.Context) {
+func setupWorkerService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	server := &http.Server{Addr: _taskServAddr_, Handler: nil}
 
 	http.HandleFunc("/task", taskOpDispatch)
 
-	server.ListenAndServe()
-
 	g_reqHandler.InfoLog("Listening Port 6668 for worker...")
 
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-(*ctx).Done():
+			fmt.Println("Stop Task Server.")
 			server.Close()
+			wg.Done()
 		}
 	}()
+
+	server.ListenAndServe()
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"scheduler/common"
 	"strings"
+	"sync"
 )
 
 func createRequest(rw http.ResponseWriter, req *http.Request) {
@@ -100,21 +101,21 @@ func requestStateOpDispatch(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func setupManageService(ctx context.Context) {
+func setupManageService(wg *sync.WaitGroup, ctx *context.Context) {
 
 	server := &http.Server{Addr: _requestServAddr_, Handler: nil}
 
 	http.HandleFunc("/request", requestOpDispatch)
 	http.HandleFunc("/requestState", requestStateOpDispatch)
 
-	server.ListenAndServe()
-
-	g_reqHandler.InfoLog("Listening Port 6666 for request...")
-
 	go func() {
 		select {
-		case <-ctx.Done():
+		case <-(*ctx).Done():
+			fmt.Println("Stop Request Server.")
 			server.Close()
+			wg.Done()
 		}
 	}()
+	g_reqHandler.InfoLog("Listening Port 6666 for request...")
+	server.ListenAndServe()
 }

@@ -4,11 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
 	"scheduler/auth"
 	"scheduler/db"
 	"scheduler/model"
 	"scheduler/webService"
-	"time"
+	"sync"
 )
 
 type SysConfig struct {
@@ -65,12 +67,15 @@ func main() {
 		return
 	}
 
-	//ctx, cancel := context.WithCancel(context.Background())
-	ctx, _ := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	webService.SetupWebService(wg, &ctx, cephManager, a)
 
-	webService.SetupWebService(ctx, cephManager, a)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	s := <-c
+	cancel()
+	wg.Wait()
+	fmt.Println("Got signal:", s)
 
-	for {
-		time.Sleep(600 * time.Second)
-	}
 }
