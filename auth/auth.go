@@ -23,11 +23,11 @@ type AuthManager struct {
 	db  *db.Pgdb
 }
 
-func NewAuthManager(dbParm *db.DbConnPara) *AuthManager {
+func NewAuthManager(logDir string, dbParm *db.DbConnPara) *AuthManager {
 	auth := new(AuthManager)
 
 	auth.log = new(logger.Log)
-	err := auth.log.InitLogger("Auth")
+	err := auth.log.InitLogger(logDir, "Auth")
 	if nil != err {
 		return nil
 	}

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"scheduler/db"
 	"scheduler/log"
 )
@@ -12,12 +13,13 @@ type CephManager struct {
 	requestHandler RequestHandler
 }
 
-func NewCephManager(dbParm *db.DbConnPara) *CephManager {
+func NewCephManager(logDir string, dbParm *db.DbConnPara) *CephManager {
 	manager := new(CephManager)
 
 	manager.log = new(logger.Log)
-	err := manager.log.InitLogger("CephManager")
+	err := manager.log.InitLogger(logDir, "CephManager")
 	if nil != err {
+		fmt.Println(err)
 		return nil
 	}
 

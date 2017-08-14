@@ -12,10 +12,10 @@ type Log struct {
 	Debug *log.Logger
 }
 
-func (l *Log) InitLogger(filename string) error {
+func (l *Log) InitLogger(logDir, filename string) error {
 
-	folderPath := "/Users/weiyudi/Applications/log"
-	err := os.MkdirAll(folderPath, 0666)
+	folderPath := logDir
+	err := os.MkdirAll(folderPath, 0777)
 	if nil != err {
 		s := fmt.Sprintf("Init logger fail, %s %s", folderPath, err.Error())
 		return errors.New(s)

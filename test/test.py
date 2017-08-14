@@ -10,7 +10,7 @@ manageServiceURL = 'http://127.0.0.1:6667/'
 taskServiceURL = 'http://127.0.0.1:6668/task'
 
 test_req_type = '300'
-conn = psycopg2.connect(database="request", user="postgres", password="postgres", host="192.168.56.132", port=5432)
+conn = psycopg2.connect(database="request", user="postgres", password="postgres", host="192.168.56.133", port=5432)
 
 
 def checkResponseCode(resp):

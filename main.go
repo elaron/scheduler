@@ -19,6 +19,8 @@ type SysConfig struct {
 
 	authManagerDbIp   string
 	authManagerDbPort int32
+
+	logDir string
 }
 
 func initConfig(config *SysConfig) {
@@ -28,12 +30,15 @@ func initConfig(config *SysConfig) {
 	ip2 := flag.String("authMngDbIp", "0.0.0.0", "Auth manager db ip address")
 	port2 := flag.Int("authMngDbPort", 5432, "Auth manager db port")
 
+	logDir := flag.String("logPath", "/var/log/sheduler", "SMP log path")
+
 	flag.Parse()
 
 	config.cephManagerDbIp = *ip1
 	config.cephManagerDbPort = int32(*port1)
 	config.authManagerDbIp = *ip2
 	config.authManagerDbPort = int32(*port2)
+	config.logDir = *logDir
 }
 
 func main() {
@@ -58,7 +63,7 @@ func main() {
 		Password: "postgres",
 		Dbname:   "request"}
 
-	cephManager := model.NewCephManager(para_request)
+	cephManager := model.NewCephManager(conf.logDir, para_request)
 	if nil == cephManager {
 		fmt.Println("Start SMP CephManager fail!")
 		return
@@ -71,7 +76,7 @@ func main() {
 		Password: "postgres",
 		Dbname:   "auth"}
 
-	a := auth.NewAuthManager(para_auth)
+	a := auth.NewAuthManager(conf.logDir, para_auth)
 	if nil == cephManager {
 		fmt.Println("Start SMP AuthManager fail!")
 		return
