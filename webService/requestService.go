@@ -10,6 +10,39 @@ import (
 	"sync"
 )
 
+func setupRequestService(wg *sync.WaitGroup, ctx context.Context) {
+
+	server := &http.Server{Addr: _requestServAddr_, Handler: nil}
+
+	http.HandleFunc("/request", requestOpDispatch)
+	http.HandleFunc("/requestState", requestStateOpDispatch)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Stop Request Server.")
+			server.Close()
+			wg.Done()
+		}
+	}()
+	g_reqHandler.InfoLog("Listening for request...on port ", _requestServAddr_)
+	server.ListenAndServe()
+}
+
+func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
+	fmt.Println("Action:", req.Method)
+	switch req.Method {
+
+	case "POST":
+		createRequest(rw, req)
+
+	default:
+		s := fmt.Sprintf("It's illegal to %s request!", req.Method)
+		g_reqHandler.InfoLog(s)
+		rw.Write([]byte(s))
+	}
+}
+
 func createRequest(rw http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 
@@ -38,20 +71,6 @@ func createRequest(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	resp.Send(rw)
-}
-
-func requestOpDispatch(rw http.ResponseWriter, req *http.Request) {
-	fmt.Println("Action:", req.Method)
-	switch req.Method {
-
-	case "POST":
-		createRequest(rw, req)
-
-	default:
-		s := fmt.Sprintf("It's illegal to %s request!", req.Method)
-		g_reqHandler.InfoLog(s)
-		rw.Write([]byte(s))
-	}
 }
 
 func getRequestState(rw http.ResponseWriter, req *http.Request) {
@@ -99,23 +118,4 @@ func requestStateOpDispatch(rw http.ResponseWriter, req *http.Request) {
 		g_reqHandler.InfoLog(s)
 		rw.Write([]byte(s))
 	}
-}
-
-func setupManageService(wg *sync.WaitGroup, ctx context.Context) {
-
-	server := &http.Server{Addr: _requestServAddr_, Handler: nil}
-
-	http.HandleFunc("/request", requestOpDispatch)
-	http.HandleFunc("/requestState", requestStateOpDispatch)
-
-	go func() {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Stop Request Server.")
-			server.Close()
-			wg.Done()
-		}
-	}()
-	g_reqHandler.InfoLog("Listening Port 6666 for request...")
-	server.ListenAndServe()
 }

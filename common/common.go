@@ -99,3 +99,10 @@ func GetReqStateTableName(reqType string) string {
 func GetUserTable(username string) string {
 	return fmt.Sprintf("user_%s", username)
 }
+
+type MonData struct {
+	Index string `json:"index"`
+	Type  string `json:"type"`
+	ID    int32  `json:"id"`
+	Body  string `json:"body"`
+}

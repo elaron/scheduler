@@ -20,6 +20,9 @@ type SysConfig struct {
 	authManagerDbIp   string
 	authManagerDbPort int32
 
+	elasticsearchManagerDbIp   string
+	elasticsearchManagerDbPort int32
+
 	logDir string
 }
 
@@ -30,6 +33,9 @@ func initConfig(config *SysConfig) {
 	ip2 := flag.String("authMngDbIp", "0.0.0.0", "Auth manager db ip address")
 	port2 := flag.Int("authMngDbPort", 5432, "Auth manager db port")
 
+	ip3 := flag.String("esMngDbIp", "0.0.0.0", "Elasticsearch manager db ip address")
+	port3 := flag.Int("esMngDbPort", 9200, "Elasticsearch manager db port")
+
 	logDir := flag.String("logPath", "/var/log/sheduler", "SMP log path")
 
 	flag.Parse()
@@ -38,6 +44,8 @@ func initConfig(config *SysConfig) {
 	config.cephManagerDbPort = int32(*port1)
 	config.authManagerDbIp = *ip2
 	config.authManagerDbPort = int32(*port2)
+	config.elasticsearchManagerDbIp = *ip3
+	config.elasticsearchManagerDbPort = int32(*port3)
 	config.logDir = *logDir
 }
 
@@ -76,13 +84,26 @@ func main() {
 		Password: "postgres",
 		Dbname:   "auth"}
 
-	a := auth.NewAuthManager(conf.logDir, para_auth)
-	if nil == cephManager {
+	authManager := auth.NewAuthManager(conf.logDir, para_auth)
+	if nil == authManager {
 		fmt.Println("Start SMP AuthManager fail!")
 		return
 	}
 
-	webService.SetupWebService(wg, ctx, cephManager, a)
+	para_es := &db.DbConnPara{
+		Host:     conf.elasticsearchManagerDbIp,
+		Port:     conf.elasticsearchManagerDbPort,
+		User:     "",
+		Password: "",
+		Dbname:   ""}
+
+	monManager := model.NewMonitorManager(conf.logDir, para_es)
+	if nil == monManager {
+		fmt.Println("Start SMP monManager fail!")
+		return
+	}
+
+	webService.SetupWebService(wg, ctx, cephManager, authManager, monManager)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

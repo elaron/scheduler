@@ -10,6 +10,51 @@ import (
 	"sync"
 )
 
+func setupWorkerService(wg *sync.WaitGroup, ctx context.Context) {
+
+	server := &http.Server{Addr: _taskServAddr_, Handler: nil}
+
+	http.HandleFunc("/task", taskOpDispatch)
+
+	g_reqHandler.InfoLog("Listening for request...on port ", _taskServAddr_)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Stop Task Server.")
+			server.Close()
+			wg.Done()
+		}
+	}()
+
+	server.ListenAndServe()
+}
+
+func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
+
+	fmt.Println("Action:", req.Method)
+
+	switch req.Method {
+	case "GET":
+		fetchTask(rw, req)
+
+	case "POST":
+		fetchTask(rw, req)
+
+	case "PUT":
+		updateTask(rw, req)
+
+	case "DELETE":
+		s := "It's illegal to delete task!"
+		g_reqHandler.InfoLog(s)
+		rw.Write([]byte(s))
+
+	default:
+		g_reqHandler.InfoLog("Unknown request Method: ", req.Method)
+	}
+
+}
+
 func fetchTask(rw http.ResponseWriter, req *http.Request) {
 	reqType := req.FormValue("type")
 	num, err := strconv.Atoi(req.FormValue("num"))
@@ -71,49 +116,4 @@ func updateTask(rw http.ResponseWriter, req *http.Request) {
 	}
 	s := fmt.Sprintf("Update task %s %d success!", stateReport.RequestId, stateReport.State)
 	rw.Write([]byte(s))
-}
-
-func taskOpDispatch(rw http.ResponseWriter, req *http.Request) {
-
-	fmt.Println("Action:", req.Method)
-
-	switch req.Method {
-	case "GET":
-		fetchTask(rw, req)
-
-	case "POST":
-		fetchTask(rw, req)
-
-	case "PUT":
-		updateTask(rw, req)
-
-	case "DELETE":
-		s := "It's illegal to delete task!"
-		g_reqHandler.InfoLog(s)
-		rw.Write([]byte(s))
-
-	default:
-		g_reqHandler.InfoLog("Unknown request Method: ", req.Method)
-	}
-
-}
-
-func setupWorkerService(wg *sync.WaitGroup, ctx context.Context) {
-
-	server := &http.Server{Addr: _taskServAddr_, Handler: nil}
-
-	http.HandleFunc("/task", taskOpDispatch)
-
-	g_reqHandler.InfoLog("Listening Port 6668 for worker...")
-
-	go func() {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Stop Task Server.")
-			server.Close()
-			wg.Done()
-		}
-	}()
-
-	server.ListenAndServe()
 }

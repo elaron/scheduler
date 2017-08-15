@@ -52,6 +52,11 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.5.1.rp
 
 sudo rpm --install elasticsearch-5.5.1.rpm
 
+sudo firewall-cmd --zone=public --add-port=9200/tcp --permanent
+
+sudo firewall-cmd --reload
+
+
 ### install postgresql 9.6
 https://www.postgresql.org/download/linux/redhat/
 
